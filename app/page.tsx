@@ -1,5 +1,5 @@
-import HeroSection from "@/components/home/HeroSection"
-import PopularTours from "@/components/home/PopularTours"
+import HeroSection from "@/components/home/HeroSection";
+import PopularTours from "@/components/home/PopularTours";
 
 export default function HomePage() {
   return (
@@ -7,5 +7,5 @@ export default function HomePage() {
       <HeroSection />
       <PopularTours />
     </div>
-  )
+  );
 }

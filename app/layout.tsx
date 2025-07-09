@@ -5,6 +5,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
+import AnimationController from "@/components/common/AnimationController";
 
 const openSans = Open_Sans({ subsets: ["latin"] });
 
@@ -36,6 +37,7 @@ export default function RootLayout({
           <Header />
           <main className="min-h-screen">{children}</main>
           <Footer />
+          <AnimationController />
         </ThemeProvider>
       </body>
     </html>
