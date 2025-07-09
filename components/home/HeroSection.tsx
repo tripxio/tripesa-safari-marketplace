@@ -25,22 +25,13 @@ export default function HeroSection() {
 
   useEffect(() => {
     const interval = setInterval(() => {
-      // Get a random index different from the current one
-      const getRandomIndex = () => {
-        if (backgroundImages.length <= 1) return 0;
-
-        const randomIndex = Math.floor(Math.random() * backgroundImages.length);
-        // Make sure we don't show the same image twice in a row
-        return randomIndex !== currentImageIndex
-          ? randomIndex
-          : (randomIndex + 1) % backgroundImages.length;
-      };
-
-      setCurrentImageIndex(getRandomIndex());
+      setCurrentImageIndex(
+        (prevIndex) => (prevIndex + 1) % backgroundImages.length
+      );
     }, 5000); // Change image every 5 seconds
 
     return () => clearInterval(interval);
-  }, [currentImageIndex, backgroundImages.length]);
+  }, [backgroundImages.length]);
 
   const quickSuggestions = [
     "Best gorilla trekking",

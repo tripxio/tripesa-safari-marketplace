@@ -38,7 +38,9 @@ export const sampleTours: TourPackage[] = [
     currency: "USD",
     rating: 4.8,
     reviewCount: 89,
-    images: ["/placeholder.svg?height=400&width=600"],
+    images: [
+      "https://ik.imagekit.io/54hg3nvcfg/dawn-westveld-FmUx8z_Tz4A-unsplash.jpg?updatedAt=1752096189254"
+    ],
     highlights: [
       "Witness the Great Migration",
       "Big Five game viewing",
@@ -64,7 +66,7 @@ export const sampleTours: TourPackage[] = [
     currency: "USD",
     rating: 4.3,
     reviewCount: 156,
-    images: ["/placeholder.svg?height=400&width=600"],
+    images: ["https://ik.imagekit.io/54hg3nvcfg/michael-rodock-jsTYuhX5LX4-unsplash.jpg?updatedAt=1752096434113"],
     highlights: [
       "Game drives in Masai Mara",
       "Camping under the stars",
@@ -90,7 +92,7 @@ export const sampleTours: TourPackage[] = [
     currency: "USD",
     rating: 4.7,
     reviewCount: 94,
-    images: ["/placeholder.svg?height=400&width=600"],
+    images: ["https://ik.imagekit.io/54hg3nvcfg/vg-bingi-wuxuh3xJKFg-unsplash.jpg?updatedAt=1752096469372"],
     highlights: [
       "Mountain gorilla trekking",
       "Golden monkey tracking",
@@ -116,7 +118,7 @@ export const sampleTours: TourPackage[] = [
     currency: "USD",
     rating: 4.9,
     reviewCount: 67,
-    images: ["/placeholder.svg?height=400&width=600"],
+    images: ["https://ik.imagekit.io/54hg3nvcfg/wynand-uys-4ZCA3xukIso-unsplash.jpg?updatedAt=1752096591244"],
     highlights: [
       "Mokoro canoe excursions",
       "Luxury tented camps",
@@ -142,7 +144,7 @@ export const sampleTours: TourPackage[] = [
     currency: "USD",
     rating: 4.5,
     reviewCount: 73,
-    images: ["/placeholder.svg?height=400&width=600"],
+    images: ["https://ik.imagekit.io/54hg3nvcfg/ransford-quaye-RCAUud6Wcmo-unsplash.jpg?updatedAt=1752096609203"],
     highlights: [
       "Traditional village stays",
       "Local craft workshops",
@@ -168,7 +170,7 @@ export const sampleTours: TourPackage[] = [
     currency: "USD",
     rating: 4.6,
     reviewCount: 112,
-    images: ["/placeholder.svg?height=400&width=600"],
+    images: ["https://ik.imagekit.io/54hg3nvcfg/john-njoroge-PaGyC5KPm3M-unsplash.jpg?updatedAt=1752096974298"],
     highlights: [
       "Summit Africa's highest peak",
       "Machame route ascent",
@@ -194,7 +196,7 @@ export const sampleTours: TourPackage[] = [
     currency: "USD",
     rating: 4.4,
     reviewCount: 88,
-    images: ["/placeholder.svg?height=400&width=600"],
+    images: ["https://ik.imagekit.io/54hg3nvcfg/savannah-koomen-Wbt0cD840S0-unsplash.jpg?updatedAt=1752097039446"],
     highlights: [
       "Cape Town to Port Elizabeth",
       "Wine tasting experiences",
