@@ -22,7 +22,7 @@ export const sampleTours: TourPackage[] = [
     ],
     tourOperator: {
       name: "Uganda Safari Co.",
-      logo: "/placeholder.svg?height=40&width=40",
+      logo: "https://ik.imagekit.io/54hg3nvcfg/Icons/syncplicity_873148.png?updatedAt=1752097575545",
     },
     accommodationType: "Luxury",
     groupSize: "Small group",
@@ -50,7 +50,7 @@ export const sampleTours: TourPackage[] = [
     ],
     tourOperator: {
       name: "Serengeti Expeditions",
-      logo: "/placeholder.svg?height=40&width=40",
+      logo: "https://ik.imagekit.io/54hg3nvcfg/Icons/aeon_16147203.png?updatedAt=1752097575723",
     },
     accommodationType: "Luxury",
     groupSize: "Private",
@@ -76,7 +76,7 @@ export const sampleTours: TourPackage[] = [
     ],
     tourOperator: {
       name: "Kenya Adventures",
-      logo: "/placeholder.svg?height=40&width=40",
+      logo: "https://ik.imagekit.io/54hg3nvcfg/Icons/Eagle%20Head%20Sideview%20Design.png?updatedAt=1752098707626",
     },
     accommodationType: "Budget",
     groupSize: "Large group",
@@ -102,7 +102,7 @@ export const sampleTours: TourPackage[] = [
     ],
     tourOperator: {
       name: "Rwanda Eco Tours",
-      logo: "/placeholder.svg?height=40&width=40",
+      logo: "https://ik.imagekit.io/54hg3nvcfg/Icons/C%20Letter%20Red.png?updatedAt=1752098290838",
     },
     accommodationType: "Mid-range",
     groupSize: "Small group",
@@ -128,7 +128,7 @@ export const sampleTours: TourPackage[] = [
     ],
     tourOperator: {
       name: "Okavango Specialists",
-      logo: "/placeholder.svg?height=40&width=40",
+      logo: "https://ik.imagekit.io/54hg3nvcfg/Icons/S%20Letter.png?updatedAt=1752098291250",
     },
     accommodationType: "Luxury",
     groupSize: "Private",
@@ -154,7 +154,7 @@ export const sampleTours: TourPackage[] = [
     ],
     tourOperator: {
       name: "Cultural Safaris Uganda",
-      logo: "/placeholder.svg?height=40&width=40",
+      logo: "https://ik.imagekit.io/54hg3nvcfg/Icons/Chameleon.png?updatedAt=1752098291246",
     },
     accommodationType: "Mid-range",
     groupSize: "Small group",
@@ -180,7 +180,7 @@ export const sampleTours: TourPackage[] = [
     ],
     tourOperator: {
       name: "Kilimanjaro Experts",
-      logo: "/placeholder.svg?height=40&width=40",
+      logo: "https://ik.imagekit.io/54hg3nvcfg/Icons/_Pngtree_give%20me%20random%20company%20logo_20874271.png?updatedAt=1752098292525",
     },
     accommodationType: "Mid-range",
     groupSize: "Small group",
@@ -206,7 +206,7 @@ export const sampleTours: TourPackage[] = [
     ],
     tourOperator: {
       name: "South African Tours",
-      logo: "/placeholder.svg?height=40&width=40",
+      logo: "https://ik.imagekit.io/54hg3nvcfg/Icons/SVG%20Firestorm%20Flame.png?updatedAt=1752098449921",
     },
     accommodationType: "Luxury",
     groupSize: "Private",
