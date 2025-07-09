@@ -1,15 +1,46 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Search, Mic, Sparkles } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
-import AISearchInterface from "./AISearchInterface"
+import { useState, useEffect } from "react";
+import { Search, Mic, Sparkles } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import AISearchInterface from "./AISearchInterface";
 
 export default function HeroSection() {
-  const [searchQuery, setSearchQuery] = useState("")
-  const [showAISearch, setShowAISearch] = useState(false)
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showAISearch, setShowAISearch] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+  const backgroundImages = [
+    "https://ik.imagekit.io/54hg3nvcfg/zdenek-machacek-UxHol6SwLyM-unsplash.jpg?updatedAt=1752094873385",
+    "https://ik.imagekit.io/54hg3nvcfg/redcharlie-xtvo0ffGKlI-unsplash.jpg?updatedAt=1752094873358",
+    "https://ik.imagekit.io/54hg3nvcfg/max-christian-sMjVNtvYkD0-unsplash.jpg?updatedAt=1752095287325",
+    "https://ik.imagekit.io/54hg3nvcfg/photos-by-beks-B3fLaAAy6nU-unsplash.jpg?updatedAt=1752095287350",
+    "https://ik.imagekit.io/54hg3nvcfg/deon-de-villiers-7HRHhcueqZ8-unsplash.jpg?updatedAt=1752095287743",
+    "https://ik.imagekit.io/54hg3nvcfg/sutirta-budiman-PdiOj8kRy28-unsplash.jpg?updatedAt=1752095287980",
+    "https://ik.imagekit.io/54hg3nvcfg/clinton-mwebaze-bFDRtkC9Hmw-unsplash.jpg?updatedAt=1752095582636",
+    "https://ik.imagekit.io/54hg3nvcfg/nathan-cima-k3iU3W5QkBQ-unsplash.jpg?updatedAt=1752095583994",
+  ];
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      // Get a random index different from the current one
+      const getRandomIndex = () => {
+        if (backgroundImages.length <= 1) return 0;
+
+        const randomIndex = Math.floor(Math.random() * backgroundImages.length);
+        // Make sure we don't show the same image twice in a row
+        return randomIndex !== currentImageIndex
+          ? randomIndex
+          : (randomIndex + 1) % backgroundImages.length;
+      };
+
+      setCurrentImageIndex(getRandomIndex());
+    }, 5000); // Change image every 5 seconds
+
+    return () => clearInterval(interval);
+  }, [currentImageIndex, backgroundImages.length]);
 
   const quickSuggestions = [
     "Best gorilla trekking",
@@ -17,17 +48,21 @@ export default function HeroSection() {
     "Budget-friendly tours",
     "Tanzania wildlife",
     "Uganda adventures",
-  ]
+  ];
 
   return (
     <section className="relative h-[70vh] flex items-center justify-center overflow-hidden">
-      {/* Background Image */}
-      <div
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-        style={{
-          backgroundImage: "url('/placeholder.svg?height=800&width=1200')",
-        }}
-      />
+      {/* Background Images */}
+      {backgroundImages.map((image, index) => (
+        <div
+          key={index}
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-opacity duration-1000"
+          style={{
+            backgroundImage: `url('${image}')`,
+            opacity: currentImageIndex === index ? 1 : 0,
+          }}
+        />
+      ))}
 
       {/* Overlay */}
       <div className="absolute inset-0 hero-gradient" />
@@ -40,7 +75,8 @@ export default function HeroSection() {
         </h1>
 
         <p className="text-xl md:text-2xl text-gray-200 mb-12 max-w-2xl mx-auto">
-          AI-powered safari discovery that connects you to unforgettable experiences across the African continent
+          AI-powered safari discovery that connects you to unforgettable
+          experiences across the African continent
         </p>
 
         {/* AI Search Interface */}
@@ -78,8 +114,8 @@ export default function HeroSection() {
               variant="secondary"
               className="bg-white/20 text-white hover:bg-white/30 cursor-pointer px-4 py-2 text-sm transition-all duration-200 hover:scale-105"
               onClick={() => {
-                setSearchQuery(suggestion)
-                setShowAISearch(true)
+                setSearchQuery(suggestion);
+                setShowAISearch(true);
               }}
             >
               {suggestion}
@@ -89,7 +125,10 @@ export default function HeroSection() {
 
         {/* CTA Buttons */}
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <Button size="lg" className="bg-orange-500 hover:bg-orange-600 text-white px-8 py-3 text-lg rounded-xl">
+          <Button
+            size="lg"
+            className="bg-orange-500 hover:bg-orange-600 text-white px-8 py-3 text-lg rounded-xl"
+          >
             Explore Tours
           </Button>
           <Button
@@ -103,7 +142,12 @@ export default function HeroSection() {
       </div>
 
       {/* AI Search Modal */}
-      {showAISearch && <AISearchInterface query={searchQuery} onClose={() => setShowAISearch(false)} />}
+      {showAISearch && (
+        <AISearchInterface
+          query={searchQuery}
+          onClose={() => setShowAISearch(false)}
+        />
+      )}
     </section>
-  )
+  );
 }

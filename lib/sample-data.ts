@@ -1,4 +1,4 @@
-import type { TourPackage } from "./types"
+import type { TourPackage } from "./types";
 
 export const sampleTours: TourPackage[] = [
   {
@@ -10,7 +10,9 @@ export const sampleTours: TourPackage[] = [
     currency: "USD",
     rating: 4.9,
     reviewCount: 127,
-    images: ["/placeholder.svg?height=400&width=600"],
+    images: [
+      "https://ik.imagekit.io/54hg3nvcfg/greg-gollin-i3srrRDsJEs-unsplash.jpg?updatedAt=1752095892120",
+    ],
     highlights: [
       "Mountain gorilla encounters in Bwindi Forest",
       "Expert local guides and trackers",
@@ -209,4 +211,4 @@ export const sampleTours: TourPackage[] = [
     difficulty: "Easy",
     category: "Cultural",
   },
-]
+];

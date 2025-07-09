@@ -120,17 +120,29 @@ export default function Footer() {
           <div className="space-y-4">
             <h3 className="text-lg font-semibold">Contact Info</h3>
             <div className="space-y-3">
-              <div className="flex items-center space-x-3">
-                <Mail className="h-4 w-4 text-orange-500" />
-                <span className="text-muted-foreground">info@tripesa.com</span>
+              <div className="flex items-start space-x-3">
+                <Mail className="h-4 w-4 text-orange-500 mt-1" />
+                <span className="text-muted-foreground">hello@tripesa.co</span>
               </div>
-              <div className="flex items-center space-x-3">
-                <Phone className="h-4 w-4 text-orange-500" />
-                <span className="text-muted-foreground">+1 (555) 123-4567</span>
+              <div className="flex items-start space-x-3">
+                <Phone className="h-4 w-4 text-orange-500 mt-1" />
+                <div className="flex flex-col">
+                  <span className="text-muted-foreground">
+                    +256 200 948 137
+                  </span>
+                  <span className="text-muted-foreground">+254 702 024627</span>
+                </div>
               </div>
-              <div className="flex items-center space-x-3">
-                <MapPin className="h-4 w-4 text-orange-500" />
-                <span className="text-muted-foreground">Nairobi, Kenya</span>
+              <div className="flex items-start space-x-3">
+                <MapPin className="h-4 w-4 text-orange-500 mt-1" />
+                <div className="flex flex-col">
+                  <span className="text-muted-foreground">
+                    Plot 27, Bandali Rise, Bugolobi, Kampala Uganda
+                  </span>
+                  <span className="text-muted-foreground">
+                    Western Heights – Karuna Road 10th Floor, Westlands Nairobi
+                  </span>
+                </div>
               </div>
             </div>
           </div>
