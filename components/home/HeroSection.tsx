@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Search, Mic, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -34,19 +34,24 @@ export default function HeroSection() {
   }, [backgroundImages.length]);
 
   const quickSuggestions = [
-    "Best gorilla trekking",
-    "Luxury safari packages",
-    "Budget-friendly tours",
-    "Tanzania wildlife",
-    "Uganda adventures",
+    { id: "gorilla", text: "Best gorilla trekking" },
+    { id: "luxury", text: "Luxury safari packages" },
+    { id: "budget", text: "Budget-friendly tours" },
+    { id: "tanzania", text: "Tanzania wildlife" },
+    { id: "uganda", text: "Uganda adventures" },
   ];
 
+  const handleSuggestionClick = useCallback((text: string) => {
+    setSearchQuery(text);
+    setShowAISearch(true);
+  }, []);
+
   return (
-    <section className="relative h-[70vh] flex items-center justify-center overflow-hidden">
+    <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
       {/* Background Images */}
       {backgroundImages.map((image, index) => (
         <div
-          key={index}
+          key={`bg-image-${index}`}
           className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-opacity duration-1000"
           style={{
             backgroundImage: `url('${image}')`,
@@ -59,7 +64,7 @@ export default function HeroSection() {
       <div className="absolute inset-0 hero-gradient" />
 
       {/* Content */}
-      <div className="relative z-10 text-center max-w-4xl mx-auto px-4">
+      <div className="relative z-10 text-center max-w-4xl mx-auto px-4 pt-16">
         <h1 className="text-5xl md:text-7xl font-bold text-white mb-6 leading-tight">
           Discover Africa's
           <span className="block text-orange-400">Greatest Adventures</span>
@@ -99,17 +104,14 @@ export default function HeroSection() {
 
         {/* Quick Suggestions */}
         <div className="flex flex-wrap justify-center gap-3 mb-8">
-          {quickSuggestions.map((suggestion, index) => (
+          {quickSuggestions.map((suggestion) => (
             <Badge
-              key={index}
+              key={suggestion.id}
               variant="secondary"
               className="bg-white/20 text-white hover:bg-white/30 cursor-pointer px-4 py-2 text-sm transition-all duration-200 hover:scale-105"
-              onClick={() => {
-                setSearchQuery(suggestion);
-                setShowAISearch(true);
-              }}
+              onClick={() => handleSuggestionClick(suggestion.text)}
             >
-              {suggestion}
+              {suggestion.text}
             </Badge>
           ))}
         </div>
