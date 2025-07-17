@@ -1,46 +1,45 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useState } from "react"
-import { ChevronDown, ChevronUp, X } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Label } from "@/components/ui/label"
-import { Slider } from "@/components/ui/slider"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import type { FilterState } from "@/lib/types"
+import { useState } from "react";
+import { ChevronDown, ChevronUp, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { Slider } from "@/components/ui/slider";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import type { FilterState } from "@/lib/types";
 
 interface FilterSidebarProps {
-  filters: FilterState
-  onFiltersChange: (filters: FilterState) => void
+  filters: FilterState;
+  onFiltersChange: (filters: FilterState) => void;
 }
 
-export default function FilterSidebar({ filters, onFiltersChange }: FilterSidebarProps) {
+export default function FilterSidebar({
+  filters,
+  onFiltersChange,
+}: FilterSidebarProps) {
   const [expandedSections, setExpandedSections] = useState({
     destinations: true,
     duration: true,
     price: true,
     tourTypes: true,
-    accommodation: false,
-    groupSize: false,
-    difficulty: false,
-    rating: false,
-  })
+  });
 
   const toggleSection = (section: keyof typeof expandedSections) => {
     setExpandedSections((prev) => ({
       ...prev,
       [section]: !prev[section],
-    }))
-  }
+    }));
+  };
 
   const updateFilter = (key: keyof FilterState, value: any) => {
     onFiltersChange({
       ...filters,
       [key]: value,
-    })
-  }
+    });
+  };
 
   const clearAllFilters = () => {
     onFiltersChange({
@@ -52,34 +51,47 @@ export default function FilterSidebar({ filters, onFiltersChange }: FilterSideba
       groupSizes: [],
       difficulty: [],
       rating: 0,
-    })
-  }
+    });
+  };
 
-  const destinations = ["Uganda", "Tanzania", "Kenya", "Rwanda", "Botswana", "South Africa"]
-  const tourTypes = ["Wildlife", "Gorilla trekking", "Cultural", "Adventure"]
-  const accommodationTypes = ["Budget", "Mid-range", "Luxury"]
-  const groupSizes = ["Private", "Small group", "Large group"]
-  const difficultyLevels = ["Easy", "Moderate", "Challenging"]
+  const destinations = [
+    "Uganda",
+    "Tanzania",
+    "Kenya",
+    "Rwanda",
+    "Botswana",
+    "South Africa",
+  ];
+  const tourTypes = ["Wildlife", "Gorilla trekking", "Cultural", "Adventure"];
 
   const FilterSection = ({
     title,
     section,
     children,
   }: {
-    title: string
-    section: keyof typeof expandedSections
-    children: React.ReactNode
+    title: string;
+    section: keyof typeof expandedSections;
+    children: React.ReactNode;
   }) => (
     <Card className="mb-4">
-      <CardHeader className="pb-3 cursor-pointer" onClick={() => toggleSection(section)}>
+      <CardHeader
+        className="pb-3 cursor-pointer"
+        onClick={() => toggleSection(section)}
+      >
         <CardTitle className="flex items-center justify-between text-base">
           {title}
-          {expandedSections[section] ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          {expandedSections[section] ? (
+            <ChevronUp className="h-4 w-4" />
+          ) : (
+            <ChevronDown className="h-4 w-4" />
+          )}
         </CardTitle>
       </CardHeader>
-      {expandedSections[section] && <CardContent className="pt-0">{children}</CardContent>}
+      {expandedSections[section] && (
+        <CardContent className="pt-0">{children}</CardContent>
+      )}
     </Card>
-  )
+  );
 
   return (
     <div className="space-y-4">
@@ -100,12 +112,15 @@ export default function FilterSidebar({ filters, onFiltersChange }: FilterSideba
                 checked={filters.destinations.includes(destination)}
                 onCheckedChange={(checked) => {
                   if (checked) {
-                    updateFilter("destinations", [...filters.destinations, destination])
+                    updateFilter("destinations", [
+                      ...filters.destinations,
+                      destination,
+                    ]);
                   } else {
                     updateFilter(
                       "destinations",
-                      filters.destinations.filter((d) => d !== destination),
-                    )
+                      filters.destinations.filter((d) => d !== destination)
+                    );
                   }
                 }}
               />
@@ -168,119 +183,22 @@ export default function FilterSidebar({ filters, onFiltersChange }: FilterSideba
                 checked={filters.tourTypes.includes(type)}
                 onCheckedChange={(checked) => {
                   if (checked) {
-                    updateFilter("tourTypes", [...filters.tourTypes, type])
+                    updateFilter("tourTypes", [...filters.tourTypes, type]);
                   } else {
                     updateFilter(
                       "tourTypes",
-                      filters.tourTypes.filter((t) => t !== type),
-                    )
+                      filters.tourTypes.filter((t) => t !== type)
+                    );
                   }
                 }}
               />
               <Label htmlFor={type} className="text-sm">
                 {type}
-              </Label>
-            </div>
-          ))}
-        </div>
-      </FilterSection>
-
-      <FilterSection title="Accommodation" section="accommodation">
-        <div className="space-y-3">
-          {accommodationTypes.map((type) => (
-            <div key={type} className="flex items-center space-x-2">
-              <Checkbox
-                id={type}
-                checked={filters.accommodationTypes.includes(type)}
-                onCheckedChange={(checked) => {
-                  if (checked) {
-                    updateFilter("accommodationTypes", [...filters.accommodationTypes, type])
-                  } else {
-                    updateFilter(
-                      "accommodationTypes",
-                      filters.accommodationTypes.filter((t) => t !== type),
-                    )
-                  }
-                }}
-              />
-              <Label htmlFor={type} className="text-sm">
-                {type}
-              </Label>
-            </div>
-          ))}
-        </div>
-      </FilterSection>
-
-      <FilterSection title="Group Size" section="groupSize">
-        <div className="space-y-3">
-          {groupSizes.map((size) => (
-            <div key={size} className="flex items-center space-x-2">
-              <Checkbox
-                id={size}
-                checked={filters.groupSizes.includes(size)}
-                onCheckedChange={(checked) => {
-                  if (checked) {
-                    updateFilter("groupSizes", [...filters.groupSizes, size])
-                  } else {
-                    updateFilter(
-                      "groupSizes",
-                      filters.groupSizes.filter((s) => s !== size),
-                    )
-                  }
-                }}
-              />
-              <Label htmlFor={size} className="text-sm">
-                {size}
-              </Label>
-            </div>
-          ))}
-        </div>
-      </FilterSection>
-
-      <FilterSection title="Difficulty" section="difficulty">
-        <div className="space-y-3">
-          {difficultyLevels.map((level) => (
-            <div key={level} className="flex items-center space-x-2">
-              <Checkbox
-                id={level}
-                checked={filters.difficulty.includes(level)}
-                onCheckedChange={(checked) => {
-                  if (checked) {
-                    updateFilter("difficulty", [...filters.difficulty, level])
-                  } else {
-                    updateFilter(
-                      "difficulty",
-                      filters.difficulty.filter((d) => d !== level),
-                    )
-                  }
-                }}
-              />
-              <Label htmlFor={level} className="text-sm">
-                {level}
-              </Label>
-            </div>
-          ))}
-        </div>
-      </FilterSection>
-
-      <FilterSection title="Rating" section="rating">
-        <div className="space-y-3">
-          {[4, 3, 2, 1].map((rating) => (
-            <div key={rating} className="flex items-center space-x-2">
-              <Checkbox
-                id={`rating-${rating}`}
-                checked={filters.rating === rating}
-                onCheckedChange={(checked) => {
-                  updateFilter("rating", checked ? rating : 0)
-                }}
-              />
-              <Label htmlFor={`rating-${rating}`} className="text-sm">
-                {rating}+ stars
               </Label>
             </div>
           ))}
         </div>
       </FilterSection>
     </div>
-  )
+  );
 }

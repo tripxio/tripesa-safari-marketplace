@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import Link from "next/link";
 import { Search, Mic, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -118,19 +119,30 @@ export default function HeroSection() {
 
         {/* CTA Buttons */}
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <Button
-            size="lg"
-            className="bg-orange-500 hover:bg-orange-600 text-white px-8 py-3 text-lg rounded-xl"
-          >
-            Explore Tours
-          </Button>
-          <Button
-            size="lg"
-            variant="outline"
-            className="border-white text-white hover:bg-white hover:text-gray-900 px-8 py-3 text-lg rounded-xl bg-transparent"
-          >
-            Watch Video
-          </Button>
+          <Link href="/tours">
+            <Button
+              size="lg"
+              className="bg-orange-500 hover:bg-orange-600 text-white px-8 py-3 text-lg rounded-xl"
+            >
+              Explore Tours
+            </Button>
+          </Link>
+          <Link href="/tours?category=day-trips">
+            <Button
+              size="lg"
+              className="bg-white/20 backdrop-blur text-white hover:bg-white/30 border border-white/30 px-8 py-3 text-lg rounded-xl"
+            >
+              Explore Day Trips
+            </Button>
+          </Link>
+          <Link href="/tours?category=special-offers">
+            <Button
+              size="lg"
+              className="bg-white/20 backdrop-blur text-white hover:bg-white/30 border border-white/30 px-8 py-3 text-lg rounded-xl"
+            >
+              Explore Special Offers
+            </Button>
+          </Link>
         </div>
       </div>
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import ReactMarkdown from "react-markdown";
 import { X, Sparkles, Send, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,17 +31,31 @@ export default function AISearchInterface({
   const [messages, setMessages] = useState<Message[]>([]);
   const [currentQuery, setCurrentQuery] = useState(query);
   const [isLoading, setIsLoading] = useState(false);
+  const [sessionId, setSessionId] = useState("");
+  const [conversationId, setConversationId] = useState("");
   const processedQueries = useRef<Set<string>>(new Set());
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (query && !processedQueries.current.has(query)) {
+    // Generate session and conversation IDs when the component mounts
+    setSessionId(generateUniqueId());
+    setConversationId(generateUniqueId());
+  }, []);
+
+  useEffect(() => {
+    // Scroll to the bottom whenever messages change
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  useEffect(() => {
+    if (query && !processedQueries.current.has(query) && sessionId) {
       processedQueries.current.add(query);
       handleSearch(query);
     }
-  }, [query]);
+  }, [query, sessionId]); // Depend on sessionId to ensure it's set
 
   const handleSearch = async (searchQuery: string) => {
-    if (!searchQuery.trim()) return;
+    if (!searchQuery.trim() || !sessionId) return;
 
     const userMessage: Message = {
       id: generateUniqueId(),
@@ -52,41 +67,80 @@ export default function AISearchInterface({
     setMessages((prev) => [...prev, userMessage]);
     setIsLoading(true);
 
-    // Simulate AI response
-    setTimeout(() => {
-      const aiResponse: Message = {
+    console.log("Sending chat request with:", {
+      chatInput: searchQuery,
+      sessionId,
+      conversationId,
+    });
+
+    try {
+      const response = await fetch(
+        process.env.NEXT_PUBLIC_AI_CHAT_WEBHOOK_URL as string,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            chatInput: searchQuery,
+            sessionId,
+            conversationId,
+          }),
+        }
+      );
+
+      console.log("Raw API response:", response);
+      console.log("Response status:", response.status);
+
+      if (!response.ok) {
+        throw new Error(
+          `Network response was not ok. Status: ${response.status}`
+        );
+      }
+
+      const responseText = await response.text();
+      console.log("Raw response text:", responseText);
+
+      try {
+        const data = JSON.parse(responseText);
+        console.log("Parsed JSON data:", data);
+
+        const aiResponse: Message = {
+          id: generateUniqueId(),
+          type: "ai",
+          content: data.output || "Sorry, I couldn't get a response.",
+          timestamp: new Date(),
+        };
+        setMessages((prev) => [...prev, aiResponse]);
+      } catch (jsonError) {
+        console.error("Failed to parse JSON:", jsonError);
+        // If JSON parsing fails, maybe the raw text is the message.
+        const aiResponse: Message = {
+          id: generateUniqueId(),
+          type: "ai",
+          content:
+            responseText || "Received an invalid response from the server.",
+          timestamp: new Date(),
+        };
+        setMessages((prev) => [...prev, aiResponse]);
+      }
+    } catch (error) {
+      console.error("Error fetching AI response:", error);
+      const errorMessage: Message = {
         id: generateUniqueId(),
         type: "ai",
-        content: generateAIResponse(searchQuery),
+        content: "Sorry, something went wrong. Please try again later.",
         timestamp: new Date(),
       };
-      setMessages((prev) => [...prev, aiResponse]);
+      setMessages((prev) => [...prev, errorMessage]);
+    } finally {
       setIsLoading(false);
-    }, 1500);
+    }
 
     setCurrentQuery("");
   };
 
-  const generateAIResponse = (query: string): string => {
-    const responses = {
-      gorilla:
-        "I found some amazing gorilla trekking experiences! Uganda's Bwindi Impenetrable Forest offers the best gorilla encounters. Here are 3 top-rated packages: 1) 3-day Bwindi Gorilla Trek ($1,200) 2) 5-day Uganda Gorilla & Wildlife ($2,100) 3) 7-day Rwanda-Uganda Gorilla Adventure ($3,500). All include permits, accommodation, and expert guides.",
-      luxury:
-        "For luxury safari experiences, I recommend these premium packages: 1) 6-day Serengeti Luxury Lodge Safari ($4,500) - Stay at Four Seasons Safari Lodge 2) 8-day Kenya Luxury Safari ($5,200) - Private conservancies and luxury camps 3) 10-day Tanzania Premium Circuit ($6,800) - Exclusive lodges and private game drives.",
-      budget:
-        "Great budget-friendly options available! 1) 4-day Masai Mara Budget Safari ($450) - Camping with shared facilities 2) 5-day Tanzania Budget Circuit ($680) - Basic lodges, group tours 3) 3-day Uganda Budget Wildlife ($320) - Camping in Queen Elizabeth NP. All include meals, transport, and park fees.",
-      default:
-        "I can help you find the perfect safari experience! Based on your interests, here are some personalized recommendations. Would you like me to show you specific packages for wildlife viewing, cultural experiences, or adventure activities? I can also filter by budget, duration, or destination.",
-    };
-
-    const lowerQuery = query.toLowerCase();
-    if (lowerQuery.includes("gorilla")) return responses.gorilla;
-    if (lowerQuery.includes("luxury") || lowerQuery.includes("premium"))
-      return responses.luxury;
-    if (lowerQuery.includes("budget") || lowerQuery.includes("cheap"))
-      return responses.budget;
-    return responses.default;
-  };
+  // generateAIResponse function is no longer needed
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -127,7 +181,9 @@ export default function AISearchInterface({
                     : "bg-muted text-foreground"
                 }`}
               >
-                <p className="whitespace-pre-wrap">{message.content}</p>
+                <div className="prose prose-sm max-w-none prose-p:my-0 prose-ul:my-0 prose-li:my-0">
+                  <ReactMarkdown>{message.content}</ReactMarkdown>
+                </div>
                 <p className="text-xs opacity-70 mt-1">
                   {message.timestamp.toLocaleTimeString()}
                 </p>
@@ -143,6 +199,7 @@ export default function AISearchInterface({
               </div>
             </div>
           )}
+          <div ref={messagesEndRef} />
         </div>
 
         {/* Input */}
