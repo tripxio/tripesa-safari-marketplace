@@ -1,3 +1,17 @@
+export interface Agency {
+  id: number;
+  name: string;
+  description: string;
+  slug: string;
+  address: string;
+  city: string;
+  country: string;
+  email_address: string;
+  phone_number: string;
+  logo: string;
+  url: string;
+}
+
 export interface TourPackage {
   id: number;
   title: string;
@@ -9,6 +23,7 @@ export interface TourPackage {
   city: string;
   country_code: string;
   featured: boolean;
+  agency_id?: number; // Add agency_id to link to agency data
   gallery: {
     url: string;
     thumbnail_url: string;

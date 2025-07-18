@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import type { TourPackage } from "@/lib/types";
+import TourOperatorInfo from "./TourOperatorInfo";
 
 interface TourCardProps {
   tour: TourPackage;
@@ -138,7 +139,7 @@ export default function TourCard({
                 </div>
               </div>
               <div className="flex items-center space-x-2">
-                {/* Tour operator info can be added later if available in API */}
+                <TourOperatorInfo agencyId={tour.agency_id} />
               </div>
               <div className="flex space-x-2">
                 <Button
@@ -216,7 +217,7 @@ export default function TourCard({
         </div>
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            {/* Tour operator info can be added later if available in API */}
+            <TourOperatorInfo agencyId={tour.agency_id} />
           </div>
           <div className="flex space-x-2">
             <Button
