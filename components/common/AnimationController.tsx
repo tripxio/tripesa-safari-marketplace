@@ -24,8 +24,8 @@ export default function AnimationController() {
     }
   }, [pathname]);
 
-  // Don't render any animation on tours page
-  if (pathname.includes("/tours")) {
+  // Don't render any animation on tours page or admin pages
+  if (pathname.includes("/tours") || pathname.includes("/admin")) {
     return null;
   }
 

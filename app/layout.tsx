@@ -3,8 +3,7 @@ import type { Metadata } from "next";
 import { Open_Sans } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
-import Header from "@/components/layout/Header";
-import Footer from "@/components/layout/Footer";
+import LayoutWrapper from "@/components/layout/LayoutWrapper";
 import AnimationController from "@/components/common/AnimationController";
 
 const openSans = Open_Sans({ subsets: ["latin"] });
@@ -34,9 +33,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <Header />
-          <main className="min-h-screen">{children}</main>
-          <Footer />
+          <LayoutWrapper>{children}</LayoutWrapper>
           <AnimationController />
         </ThemeProvider>
       </body>

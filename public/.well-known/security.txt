@@ -1,0 +1,9 @@
+Contact: mailto:security@tripesa.co
+Expires: 2025-12-31T23:59:59.000Z
+Encryption: https://tripesa.co/.well-known/pgp-key.asc
+Preferred-Languages: en
+Policy: https://tripesa.co/security-policy
+Acknowledgments: https://tripesa.co/security-acknowledgments
+
+# Admin areas are protected and should not be accessed by unauthorized users
+# Responsible disclosure is appreciated for any security findings 

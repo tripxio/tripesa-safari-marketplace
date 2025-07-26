@@ -1,0 +1,17 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /_next/
+Disallow: /api/
+Disallow: /.well-known/
+
+# Block all crawlers for admin areas
+User-agent: *
+Disallow: /admin
+
+# Allow all crawlers for public content
+User-agent: *
+Allow: /
+
+# Sitemap location
+Sitemap: https://tripesa.co/sitemap.xml 
