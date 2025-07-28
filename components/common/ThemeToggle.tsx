@@ -1,17 +1,46 @@
-"use client"
+"use client";
 
-import { Moon, Sun } from "lucide-react"
-import { useTheme } from "next-themes"
-import { Button } from "@/components/ui/button"
+import { Button } from "@/components/ui/button";
+import { Moon, Sun } from "lucide-react";
+import { useTheme } from "./ThemeProvider";
 
-export default function ThemeToggle() {
-  const { theme, setTheme } = useTheme()
+interface ThemeToggleProps {
+  className?: string;
+  showLabel?: boolean;
+}
+
+export default function ThemeToggle({
+  className = "",
+  showLabel = false,
+}: ThemeToggleProps) {
+  const { mode, setMode } = useTheme();
+
+  const toggleMode = () => {
+    console.log("ThemeToggle: Current mode:", mode);
+    const newMode = mode === "light" ? "dark" : "light";
+    console.log("ThemeToggle: Switching to:", newMode);
+    setMode(newMode);
+  };
 
   return (
-    <Button variant="ghost" size="icon" onClick={() => setTheme(theme === "light" ? "dark" : "light")}>
-      <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-      <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-      <span className="sr-only">Toggle theme</span>
+    <Button
+      variant="outline"
+      size="sm"
+      onClick={toggleMode}
+      className={className}
+      aria-label={`Switch to ${mode === "light" ? "dark" : "light"} mode`}
+    >
+      {mode === "light" ? (
+        <>
+          <Moon className="h-4 w-4" />
+          {showLabel && <span className="ml-2">Dark</span>}
+        </>
+      ) : (
+        <>
+          <Sun className="h-4 w-4" />
+          {showLabel && <span className="ml-2">Light</span>}
+        </>
+      )}
     </Button>
-  )
+  );
 }

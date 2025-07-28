@@ -2,37 +2,51 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { Search, Mic, Sparkles } from "lucide-react";
+import { Search, Mic, Sparkles, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import AISearchInterface from "./AISearchInterface";
+import { logButtonClick } from "@/lib/firebase/analytics";
+import { getBannerConfig, BannerConfig } from "@/lib/firebase/config-service";
 
 export default function HeroSection() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showAISearch, setShowAISearch] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [bannerConfig, setBannerConfig] = useState<BannerConfig | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const backgroundImages = [
-    "https://ik.imagekit.io/54hg3nvcfg/zdenek-machacek-UxHol6SwLyM-unsplash.jpg?updatedAt=1752094873385",
-    "https://ik.imagekit.io/54hg3nvcfg/redcharlie-xtvo0ffGKlI-unsplash.jpg?updatedAt=1752094873358",
-    "https://ik.imagekit.io/54hg3nvcfg/max-christian-sMjVNtvYkD0-unsplash.jpg?updatedAt=1752095287325",
-    "https://ik.imagekit.io/54hg3nvcfg/photos-by-beks-B3fLaAAy6nU-unsplash.jpg?updatedAt=1752095287350",
-    "https://ik.imagekit.io/54hg3nvcfg/deon-de-villiers-7HRHhcueqZ8-unsplash.jpg?updatedAt=1752095287743",
-    "https://ik.imagekit.io/54hg3nvcfg/sutirta-budiman-PdiOj8kRy28-unsplash.jpg?updatedAt=1752095287980",
-    "https://ik.imagekit.io/54hg3nvcfg/clinton-mwebaze-bFDRtkC9Hmw-unsplash.jpg?updatedAt=1752095582636",
-    "https://ik.imagekit.io/54hg3nvcfg/nathan-cima-k3iU3W5QkBQ-unsplash.jpg?updatedAt=1752095583994",
-  ];
-
+  // Load banner configuration
   useEffect(() => {
+    const loadBannerConfig = async () => {
+      try {
+        setIsLoading(true);
+        const config = await getBannerConfig();
+        setBannerConfig(config);
+      } catch (error) {
+        console.error("Error loading banner config:", error);
+        // Fallback to default values if loading fails
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadBannerConfig();
+  }, []);
+
+  // Image rotation effect
+  useEffect(() => {
+    if (!bannerConfig?.images || bannerConfig.images.length === 0) return;
+
     const interval = setInterval(() => {
       setCurrentImageIndex(
-        (prevIndex) => (prevIndex + 1) % backgroundImages.length
+        (prevIndex) => (prevIndex + 1) % bannerConfig.images.length
       );
-    }, 5000); // Change image every 5 seconds
+    }, (bannerConfig.settings?.autoplayInterval || 5) * 1000);
 
     return () => clearInterval(interval);
-  }, [backgroundImages.length]);
+  }, [bannerConfig?.images, bannerConfig?.settings?.autoplayInterval]);
 
   const quickSuggestions = [
     { id: "gorilla", text: "Best gorilla trekking" },
@@ -47,15 +61,29 @@ export default function HeroSection() {
     setShowAISearch(true);
   }, []);
 
+  // Fallback values if config is not loaded
+  const images = bannerConfig?.images || [
+    "https://ik.imagekit.io/54hg3nvcfg/zdenek-machacek-UxHol6SwLyM-unsplash.jpg?updatedAt=1752094873385",
+    "https://ik.imagekit.io/54hg3nvcfg/redcharlie-xtvo0ffGKlI-unsplash.jpg?updatedAt=1752094873358",
+  ];
+
+  const mainTitle = bannerConfig?.text?.mainTitle || "Discover Africa's";
+  const subtitle = bannerConfig?.text?.subtitle || "Greatest Adventures";
+  const description =
+    bannerConfig?.text?.description ||
+    "AI-powered safari discovery that connects you to unforgettable experiences across the African continent";
+
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
       {/* Background Images */}
-      {backgroundImages.map((image, index) => (
+      {images.map((image, index) => (
         <div
           key={`bg-image-${index}`}
           className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-opacity duration-1000"
           style={{
-            backgroundImage: `url('${image}')`,
+            backgroundImage: `url('${
+              typeof image === "string" ? image : image.url
+            }')`,
             opacity: currentImageIndex === index ? 1 : 0,
           }}
         />
@@ -67,13 +95,12 @@ export default function HeroSection() {
       {/* Content */}
       <div className="relative z-10 text-center max-w-4xl mx-auto px-4 pt-16">
         <h1 className="text-5xl md:text-7xl font-bold text-white mb-6 leading-tight">
-          Discover Africa's
-          <span className="block text-orange-400">Greatest Adventures</span>
+          {mainTitle}
+          <span className="block text-orange-400">{subtitle}</span>
         </h1>
 
         <p className="text-xl md:text-2xl text-gray-200 mb-12 max-w-2xl mx-auto">
-          AI-powered safari discovery that connects you to unforgettable
-          experiences across the African continent
+          {description}
         </p>
 
         {/* AI Search Interface */}
@@ -123,6 +150,7 @@ export default function HeroSection() {
             <Button
               size="lg"
               className="bg-orange-500 hover:bg-orange-600 text-white px-8 py-3 text-lg rounded-xl"
+              onClick={() => logButtonClick("Explore Tours", "hero_section")}
             >
               Explore Tours
             </Button>
@@ -131,6 +159,9 @@ export default function HeroSection() {
             <Button
               size="lg"
               className="bg-white/20 backdrop-blur text-white hover:bg-white/30 border border-white/30 px-8 py-3 text-lg rounded-xl"
+              onClick={() =>
+                logButtonClick("Explore Day Trips", "hero_section")
+              }
             >
               Explore Day Trips
             </Button>
@@ -139,6 +170,9 @@ export default function HeroSection() {
             <Button
               size="lg"
               className="bg-white/20 backdrop-blur text-white hover:bg-white/30 border border-white/30 px-8 py-3 text-lg rounded-xl"
+              onClick={() =>
+                logButtonClick("Explore Special Offers", "hero_section")
+              }
             >
               Explore Special Offers
             </Button>

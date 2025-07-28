@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Eye, EyeOff, Shield, Lock } from "lucide-react";
 import { toast } from "sonner";
 import { adminLogin } from "@/lib/firebase/auth";
+import { logAdminLogin } from "@/lib/firebase/analytics";
 
 export default function AdminLoginPage() {
   const [email, setEmail] = useState("");
@@ -41,6 +42,7 @@ export default function AdminLoginPage() {
       };
 
       await adminLogin(credentials);
+      logAdminLogin(email);
       toast.success("Login successful!");
       setLoginStep("complete");
     } catch (error: any) {

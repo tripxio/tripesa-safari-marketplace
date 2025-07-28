@@ -5,77 +5,192 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Palette, Save, RotateCcw, Eye } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import {
+  Palette,
+  Save,
+  RotateCcw,
+  Eye,
+  History,
+  Moon,
+  Sun,
+  ChevronDown,
+  ChevronUp,
+  User,
+  Calendar,
+  ArrowLeft,
+} from "lucide-react";
 import { toast } from "sonner";
 import {
-  getThemeColors,
-  saveThemeColors,
+  getThemeConfig,
+  saveThemeConfig,
+  getThemeVersions,
+  rollbackToVersion,
+  getDefaultColors,
+  getDefaultDarkColors,
+  ThemeConfig,
+  ThemeVersion,
   ThemeColors,
 } from "@/lib/firebase/config-service";
 import { logConfigUpdate } from "@/lib/firebase/analytics";
+import { useAuth } from "@/components/common/AuthProvider";
 
-const defaultColors: ThemeColors = {
-  primary: "#f97316", // Orange
-  secondary: "#64748b", // Slate
-  accent: "#8b5cf6", // Purple
-  background: "#ffffff", // White
-  text: "#1f2937", // Gray-800
-  muted: "#6b7280", // Gray-500
-};
+const defaultLightColors = getDefaultColors();
+const defaultDarkColors = getDefaultDarkColors();
 
 export default function ThemeColorManager() {
-  const [colors, setColors] = useState<ThemeColors>(defaultColors);
+  const { adminUser } = useAuth();
+  const [config, setConfig] = useState<ThemeConfig | null>(null);
   const [isPreviewMode, setIsPreviewMode] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [currentMode, setCurrentMode] = useState<"light" | "dark">("light");
+  const [showVersions, setShowVersions] = useState(false);
+  const [versions, setVersions] = useState<ThemeVersion[]>([]);
+  const [isLoadingVersions, setIsLoadingVersions] = useState(false);
+  const [description, setDescription] = useState("");
 
   useEffect(() => {
-    loadThemeColors();
+    loadThemeConfig();
   }, []);
 
-  const loadThemeColors = async () => {
+  const loadThemeConfig = async () => {
     try {
       setIsLoading(true);
-      const savedColors = await getThemeColors();
-      if (savedColors) {
-        setColors(savedColors);
+      const savedConfig = await getThemeConfig();
+      if (savedConfig) {
+        setConfig(savedConfig);
+      } else {
+        // Initialize with defaults if no config exists
+        const defaultConfig: ThemeConfig = {
+          light: defaultLightColors,
+          dark: defaultDarkColors,
+          isActive: true,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          createdBy: adminUser?.uid || "system",
+          version: 1,
+        };
+        setConfig(defaultConfig);
       }
     } catch (error) {
-      console.error("Error loading theme colors:", error);
-      toast.error("Failed to load theme colors");
+      console.error("Error loading theme config:", error);
+      toast.error("Failed to load theme configuration");
     } finally {
       setIsLoading(false);
     }
   };
 
+  const loadVersions = async () => {
+    try {
+      setIsLoadingVersions(true);
+      const versionHistory = await getThemeVersions(20);
+      setVersions(versionHistory);
+    } catch (error) {
+      console.error("Error loading versions:", error);
+      toast.error("Failed to load version history");
+    } finally {
+      setIsLoadingVersions(false);
+    }
+  };
+
   const handleColorChange = (key: keyof ThemeColors, value: string) => {
-    setColors((prev) => ({ ...prev, [key]: value }));
+    if (!config) return;
+
+    setConfig((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        [currentMode]: {
+          ...prev[currentMode],
+          [key]: value,
+        },
+      };
+    });
   };
 
   const handleSave = async () => {
+    if (!config || !adminUser) return;
+
     try {
       setIsSaving(true);
-      await saveThemeColors(colors);
+      await saveThemeConfig(
+        {
+          light: config.light,
+          dark: config.dark,
+          isActive: true,
+          createdBy: adminUser.uid,
+        },
+        adminUser.uid,
+        adminUser.name,
+        description || undefined
+      );
+
       logConfigUpdate("theme", "colors");
-      toast.success("Theme colors saved successfully!");
+      toast.success("Theme configuration saved successfully!");
+      setDescription("");
+
+      // Reload config to get updated version
+      await loadThemeConfig();
     } catch (error) {
-      console.error("Error saving theme colors:", error);
-      toast.error("Failed to save theme colors");
+      console.error("Error saving theme config:", error);
+      toast.error("Failed to save theme configuration");
     } finally {
       setIsSaving(false);
     }
   };
 
   const handleReset = async () => {
+    if (!adminUser) return;
+
     try {
       setIsSaving(true);
-      await saveThemeColors(defaultColors);
-      setColors(defaultColors);
+      const defaultConfig = {
+        light: defaultLightColors,
+        dark: defaultDarkColors,
+        isActive: true,
+        createdBy: adminUser.uid,
+      };
+
+      await saveThemeConfig(
+        defaultConfig,
+        adminUser.uid,
+        adminUser.name,
+        "Reset to default colors"
+      );
+
+      setConfig((prev) =>
+        prev
+          ? {
+              ...prev,
+              light: defaultLightColors,
+              dark: defaultDarkColors,
+            }
+          : null
+      );
+
       logConfigUpdate("theme", "reset");
       toast.info("Theme colors reset to default");
     } catch (error) {
       console.error("Error resetting theme colors:", error);
       toast.error("Failed to reset theme colors");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleRollback = async (versionId: string) => {
+    if (!adminUser) return;
+
+    try {
+      setIsSaving(true);
+      await rollbackToVersion(versionId, adminUser.uid, adminUser.name);
+      await loadThemeConfig();
+      toast.success("Successfully rolled back to previous version");
+    } catch (error) {
+      console.error("Error rolling back:", error);
+      toast.error("Failed to rollback theme version");
     } finally {
       setIsSaving(false);
     }
@@ -109,6 +224,8 @@ export default function ThemeColorManager() {
       description: "Muted text and border colors",
     },
   ] as const;
+
+  const currentColors = config?.[currentMode] || defaultLightColors;
 
   if (isLoading) {
     return (
@@ -154,10 +271,29 @@ export default function ThemeColorManager() {
             Theme Colors
           </h1>
           <p className="mt-2 text-gray-600 dark:text-gray-400">
-            Customize the color scheme of your Tripesa Safari website.
+            Customize the color scheme for both light and dark modes.
           </p>
+          {config && (
+            <div className="mt-2 flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400">
+              <span>Version {config.version}</span>
+              <span>•</span>
+              <span>Last updated: {config.updatedAt.toLocaleDateString()}</span>
+            </div>
+          )}
         </div>
         <div className="flex space-x-3">
+          <Button
+            variant="outline"
+            onClick={() => {
+              setShowVersions(!showVersions);
+              if (!showVersions && versions.length === 0) {
+                loadVersions();
+              }
+            }}
+          >
+            <History className="h-4 w-4 mr-2" />
+            {showVersions ? "Hide History" : "Show History"}
+          </Button>
           <Button
             variant="outline"
             onClick={() => setIsPreviewMode(!isPreviewMode)}
@@ -176,6 +312,47 @@ export default function ThemeColorManager() {
         </div>
       </div>
 
+      {/* Mode Toggle */}
+      <Card className="dark:bg-gray-800 dark:border-gray-700">
+        <CardContent className="p-4">
+          <div className="flex items-center justify-center space-x-4">
+            <Button
+              variant={currentMode === "light" ? "default" : "outline"}
+              onClick={() => setCurrentMode("light")}
+              className="flex items-center space-x-2"
+            >
+              <Sun className="h-4 w-4" />
+              <span>Light Mode</span>
+            </Button>
+            <Button
+              variant={currentMode === "dark" ? "default" : "outline"}
+              onClick={() => setCurrentMode("dark")}
+              className="flex items-center space-x-2"
+            >
+              <Moon className="h-4 w-4" />
+              <span>Dark Mode</span>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Description Input */}
+      <Card className="dark:bg-gray-800 dark:border-gray-700">
+        <CardHeader>
+          <CardTitle className="text-gray-900 dark:text-white">
+            Change Description (Optional)
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Textarea
+            placeholder="Describe what changes you're making..."
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            className="dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+          />
+        </CardContent>
+      </Card>
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Color Configuration */}
         <div className="space-y-6">
@@ -183,7 +360,7 @@ export default function ThemeColorManager() {
             <CardHeader>
               <CardTitle className="flex items-center text-gray-900 dark:text-white">
                 <Palette className="h-5 w-5 mr-2" />
-                Color Configuration
+                {currentMode === "light" ? "Light Mode" : "Dark Mode"} Colors
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -202,13 +379,13 @@ export default function ThemeColorManager() {
                     <Input
                       id={key}
                       type="color"
-                      value={colors[key]}
+                      value={currentColors[key]}
                       onChange={(e) => handleColorChange(key, e.target.value)}
                       className="w-16 h-10 p-1 border rounded dark:border-gray-600"
                     />
                     <Input
                       type="text"
-                      value={colors[key]}
+                      value={currentColors[key]}
                       onChange={(e) => handleColorChange(key, e.target.value)}
                       placeholder="#000000"
                       className="flex-1 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
@@ -223,12 +400,12 @@ export default function ThemeColorManager() {
           <Card className="dark:bg-gray-800 dark:border-gray-700">
             <CardHeader>
               <CardTitle className="text-gray-900 dark:text-white">
-                Color Palette
+                {currentMode === "light" ? "Light Mode" : "Dark Mode"} Palette
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 gap-4">
-                {Object.entries(colors).map(([key, color]) => (
+                {Object.entries(currentColors).map(([key, color]) => (
                   <div key={key} className="text-center">
                     <div
                       className="w-full h-16 rounded-lg mb-2 border dark:border-gray-600"
@@ -253,27 +430,28 @@ export default function ThemeColorManager() {
             <Card className="dark:bg-gray-800 dark:border-gray-700">
               <CardHeader>
                 <CardTitle className="text-gray-900 dark:text-white">
-                  Live Preview
+                  Live Preview -{" "}
+                  {currentMode === "light" ? "Light Mode" : "Dark Mode"}
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div
                   className="p-6 rounded-lg border dark:border-gray-600"
-                  style={{ backgroundColor: colors.background }}
+                  style={{ backgroundColor: currentColors.background }}
                 >
                   <h3
                     className="text-lg font-semibold mb-4"
-                    style={{ color: colors.text }}
+                    style={{ color: currentColors.text }}
                   >
                     Sample Content
                   </h3>
-                  <p className="mb-4" style={{ color: colors.muted }}>
+                  <p className="mb-4" style={{ color: currentColors.muted }}>
                     This is how your content will look with the selected colors.
                   </p>
                   <div className="space-y-3">
                     <Button
                       style={{
-                        backgroundColor: colors.primary,
+                        backgroundColor: currentColors.primary,
                         color: "#ffffff",
                       }}
                     >
@@ -282,8 +460,8 @@ export default function ThemeColorManager() {
                     <Button
                       variant="outline"
                       style={{
-                        borderColor: colors.secondary,
-                        color: colors.secondary,
+                        borderColor: currentColors.secondary,
+                        color: currentColors.secondary,
                       }}
                     >
                       Secondary Button
@@ -291,7 +469,7 @@ export default function ThemeColorManager() {
                     <div
                       className="p-3 rounded"
                       style={{
-                        backgroundColor: colors.accent,
+                        backgroundColor: currentColors.accent,
                         color: "#ffffff",
                       }}
                     >
@@ -312,12 +490,12 @@ export default function ThemeColorManager() {
               <CardContent>
                 <div className="bg-gray-900 text-green-400 p-4 rounded-lg font-mono text-sm overflow-x-auto">
                   <pre>{`:root {
-  --primary: ${colors.primary};
-  --secondary: ${colors.secondary};
-  --accent: ${colors.accent};
-  --background: ${colors.background};
-  --text: ${colors.text};
-  --muted: ${colors.muted};
+  --primary: ${currentColors.primary};
+  --secondary: ${currentColors.secondary};
+  --accent: ${currentColors.accent};
+  --background: ${currentColors.background};
+  --text: ${currentColors.text};
+  --muted: ${currentColors.muted};
 }`}</pre>
                 </div>
               </CardContent>
@@ -325,6 +503,91 @@ export default function ThemeColorManager() {
           </div>
         )}
       </div>
+
+      {/* Version History */}
+      {showVersions && (
+        <Card className="dark:bg-gray-800 dark:border-gray-700">
+          <CardHeader>
+            <CardTitle className="text-gray-900 dark:text-white">
+              Version History
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {isLoadingVersions ? (
+              <div className="space-y-4">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="h-16 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"
+                  />
+                ))}
+              </div>
+            ) : versions.length === 0 ? (
+              <p className="text-gray-500 dark:text-gray-400 text-center py-8">
+                No version history available
+              </p>
+            ) : (
+              <div className="space-y-4">
+                {versions.map((version) => (
+                  <div
+                    key={version.id}
+                    className="flex items-center justify-between p-4 border rounded-lg dark:border-gray-600"
+                  >
+                    <div className="flex items-center space-x-4">
+                      <div className="flex space-x-1">
+                        <div
+                          className="w-4 h-4 rounded"
+                          style={{ backgroundColor: version.light.primary }}
+                        />
+                        <div
+                          className="w-4 h-4 rounded"
+                          style={{ backgroundColor: version.dark.primary }}
+                        />
+                      </div>
+                      <div>
+                        <div className="flex items-center space-x-2">
+                          <span className="font-medium text-gray-900 dark:text-white">
+                            Version {version.version}
+                          </span>
+                          {version.isActive && (
+                            <Badge variant="secondary">Current</Badge>
+                          )}
+                        </div>
+                        <div className="flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400">
+                          <span className="flex items-center">
+                            <User className="h-3 w-3 mr-1" />
+                            {version.createdByName}
+                          </span>
+                          <span className="flex items-center">
+                            <Calendar className="h-3 w-3 mr-1" />
+                            {version.createdAt.toLocaleDateString()}
+                          </span>
+                        </div>
+                        {version.description && (
+                          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                            {version.description}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    {!version.isActive && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleRollback(version.id)}
+                        disabled={isSaving}
+                      >
+                        <ArrowLeft className="h-4 w-4 mr-2" />
+                        Rollback
+                      </Button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Preset Themes */}
       <Card className="dark:bg-gray-800 dark:border-gray-700">
@@ -337,16 +600,31 @@ export default function ThemeColorManager() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Button
               variant="outline"
-              onClick={() =>
-                setColors({
-                  primary: "#f97316",
-                  secondary: "#64748b",
-                  accent: "#8b5cf6",
-                  background: "#ffffff",
-                  text: "#1f2937",
-                  muted: "#6b7280",
-                })
-              }
+              onClick={() => {
+                setConfig((prev) =>
+                  prev
+                    ? {
+                        ...prev,
+                        light: {
+                          primary: "#f97316",
+                          secondary: "#64748b",
+                          accent: "#8b5cf6",
+                          background: "#ffffff",
+                          text: "#1f2937",
+                          muted: "#6b7280",
+                        },
+                        dark: {
+                          primary: "#f97316",
+                          secondary: "#94a3b8",
+                          accent: "#a78bfa",
+                          background: "#0f172a",
+                          text: "#f1f5f9",
+                          muted: "#64748b",
+                        },
+                      }
+                    : null
+                );
+              }}
               className="h-20 flex-col dark:border-gray-600 dark:text-white dark:hover:bg-gray-700"
             >
               <div className="flex space-x-1 mb-2">
@@ -358,16 +636,31 @@ export default function ThemeColorManager() {
             </Button>
             <Button
               variant="outline"
-              onClick={() =>
-                setColors({
-                  primary: "#059669",
-                  secondary: "#475569",
-                  accent: "#7c3aed",
-                  background: "#ffffff",
-                  text: "#1f2937",
-                  muted: "#6b7280",
-                })
-              }
+              onClick={() => {
+                setConfig((prev) =>
+                  prev
+                    ? {
+                        ...prev,
+                        light: {
+                          primary: "#059669",
+                          secondary: "#475569",
+                          accent: "#7c3aed",
+                          background: "#ffffff",
+                          text: "#1f2937",
+                          muted: "#6b7280",
+                        },
+                        dark: {
+                          primary: "#10b981",
+                          secondary: "#64748b",
+                          accent: "#8b5cf6",
+                          background: "#0f172a",
+                          text: "#f1f5f9",
+                          muted: "#64748b",
+                        },
+                      }
+                    : null
+                );
+              }}
               className="h-20 flex-col dark:border-gray-600 dark:text-white dark:hover:bg-gray-700"
             >
               <div className="flex space-x-1 mb-2">
@@ -379,16 +672,31 @@ export default function ThemeColorManager() {
             </Button>
             <Button
               variant="outline"
-              onClick={() =>
-                setColors({
-                  primary: "#dc2626",
-                  secondary: "#374151",
-                  accent: "#9333ea",
-                  background: "#ffffff",
-                  text: "#1f2937",
-                  muted: "#6b7280",
-                })
-              }
+              onClick={() => {
+                setConfig((prev) =>
+                  prev
+                    ? {
+                        ...prev,
+                        light: {
+                          primary: "#dc2626",
+                          secondary: "#374151",
+                          accent: "#9333ea",
+                          background: "#ffffff",
+                          text: "#1f2937",
+                          muted: "#6b7280",
+                        },
+                        dark: {
+                          primary: "#ef4444",
+                          secondary: "#6b7280",
+                          accent: "#a855f7",
+                          background: "#0f172a",
+                          text: "#f1f5f9",
+                          muted: "#64748b",
+                        },
+                      }
+                    : null
+                );
+              }}
               className="h-20 flex-col dark:border-gray-600 dark:text-white dark:hover:bg-gray-700"
             >
               <div className="flex space-x-1 mb-2">

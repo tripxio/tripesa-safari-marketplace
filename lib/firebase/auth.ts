@@ -1,13 +1,13 @@
 import {
   signInWithEmailAndPassword,
   signOut,
-  onAuthStateChanged,
+  setPersistence,
+  browserLocalPersistence,
   User,
+  onAuthStateChanged,
   createUserWithEmailAndPassword,
   updatePassword,
   sendPasswordResetEmail,
-  setPersistence,
-  browserLocalPersistence,
 } from "firebase/auth";
 import {
   doc,
@@ -21,12 +21,14 @@ import {
 } from "firebase/firestore";
 import { authenticator } from "otplib";
 import QRCode from "qrcode";
-import { auth, db } from "./config";
+import { getFirebaseAuth, getFirebaseDB } from "./init";
 
-// Configure Firebase session persistence
-setPersistence(auth, browserLocalPersistence).catch((error) => {
-  console.error("Error setting persistence:", error);
-});
+// Configure Firebase session persistence (only on client side)
+if (typeof window !== "undefined") {
+  setPersistence(getFirebaseAuth(), browserLocalPersistence).catch((error) => {
+    console.error("Error setting persistence:", error);
+  });
+}
 
 // Configure authenticator for production
 authenticator.options = {
@@ -44,6 +46,7 @@ export interface AdminUser {
   createdAt: Date;
   lastLogin?: Date;
   isActive: boolean;
+  backupCodes?: Array<{ code: string; used: boolean }>;
 }
 
 export interface LoginCredentials {
@@ -59,32 +62,32 @@ export const adminLogin = async (
   try {
     // First, authenticate with email/password
     const userCredential = await signInWithEmailAndPassword(
-      auth,
+      getFirebaseAuth(),
       credentials.email,
       credentials.password
     );
 
     // Check if user exists in admin collection
     const userDoc = await getDoc(
-      doc(db, "admin-users", userCredential.user.uid)
+      doc(getFirebaseDB(), "admin-users", userCredential.user.uid)
     );
 
     if (!userDoc.exists()) {
-      await signOut(auth);
+      await signOut(getFirebaseAuth());
       throw new Error("User not authorized as admin");
     }
 
     const adminData = userDoc.data() as AdminUser;
 
     if (!adminData.isActive) {
-      await signOut(auth);
+      await signOut(getFirebaseAuth());
       throw new Error("Account is deactivated");
     }
 
     // Check 2FA if enabled
     if (adminData.twoFactorEnabled) {
       if (!credentials.twoFactorCode) {
-        await signOut(auth);
+        await signOut(getFirebaseAuth());
         throw new Error("2FA code required");
       }
 
@@ -95,41 +98,56 @@ export const adminLogin = async (
       });
 
       if (!isValid2FA) {
-        await signOut(auth);
+        await signOut(getFirebaseAuth());
         throw new Error("Invalid 2FA code");
       }
     }
 
     // Update last login
-    await updateDoc(doc(db, "admin-users", userCredential.user.uid), {
-      lastLogin: new Date(),
-    });
+    await updateDoc(
+      doc(getFirebaseDB(), "admin-users", userCredential.user.uid),
+      {
+        lastLogin: new Date(),
+      }
+    );
 
-    return adminData;
-  } catch (error) {
+    return {
+      uid: userCredential.user.uid,
+      email: adminData.email,
+      role: adminData.role,
+      name: adminData.name,
+      twoFactorEnabled: adminData.twoFactorEnabled,
+      twoFactorSecret: adminData.twoFactorSecret,
+      createdAt: adminData.createdAt,
+      lastLogin: new Date(),
+      isActive: adminData.isActive,
+    };
+  } catch (error: any) {
     console.error("Admin login error:", error);
-    throw error;
+    throw new Error(error.message || "Login failed");
   }
 };
 
-// Create new admin user (only super-admin can do this)
+// Create admin user (client-side only - no email sending)
 export const createAdminUser = async (
   email: string,
-  password: string,
   name: string,
   role: "admin" | "super-admin" = "admin"
-): Promise<string> => {
+): Promise<{ uid: string; password: string }> => {
   try {
-    // Create user in Firebase Auth
+    // Generate a secure password
+    const password = generateSecurePassword();
+
+    // Create the user in Firebase Auth
     const userCredential = await createUserWithEmailAndPassword(
-      auth,
+      getFirebaseAuth(),
       email,
       password
     );
 
     // Create admin user document
-    const adminUser: Omit<AdminUser, "uid"> = {
-      email,
+    const adminUserData: Omit<AdminUser, "uid"> = {
+      email: email.toLowerCase(),
       role,
       name,
       twoFactorEnabled: false,
@@ -137,16 +155,47 @@ export const createAdminUser = async (
       isActive: true,
     };
 
-    await setDoc(doc(db, "admin-users", userCredential.user.uid), adminUser);
+    await setDoc(
+      doc(getFirebaseDB(), "admin-users", userCredential.user.uid),
+      adminUserData
+    );
 
-    return userCredential.user.uid;
-  } catch (error) {
-    console.error("Create admin user error:", error);
-    throw error;
+    return {
+      uid: userCredential.user.uid,
+      password,
+    };
+  } catch (error: any) {
+    console.error("Error creating admin user:", error);
+    throw new Error(error.message || "Failed to create admin user");
   }
 };
 
-// Setup 2FA for admin user
+// Generate secure password (moved from email service)
+const generateSecurePassword = (): string => {
+  const length = 12;
+  const charset =
+    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*";
+  let password = "";
+
+  // Ensure at least one character from each category
+  password += "ABCDEFGHIJKLMNOPQRSTUVWXYZ"[Math.floor(Math.random() * 26)]; // Uppercase
+  password += "abcdefghijklmnopqrstuvwxyz"[Math.floor(Math.random() * 26)]; // Lowercase
+  password += "0123456789"[Math.floor(Math.random() * 10)]; // Number
+  password += "!@#$%^&*"[Math.floor(Math.random() * 8)]; // Special character
+
+  // Fill the rest randomly
+  for (let i = 4; i < length; i++) {
+    password += charset[Math.floor(Math.random() * charset.length)];
+  }
+
+  // Shuffle the password
+  return password
+    .split("")
+    .sort(() => Math.random() - 0.5)
+    .join("");
+};
+
+// Setup 2FA for a user
 export const setupTwoFactor = async (
   userId: string
 ): Promise<{
@@ -155,41 +204,31 @@ export const setupTwoFactor = async (
   backupCodes: Array<{ code: string; used: boolean }>;
 }> => {
   try {
-    // Get user info to use email instead of UID
-    const userDoc = await getDoc(doc(db, "admin-users", userId));
-    if (!userDoc.exists()) {
-      throw new Error("User not found");
-    }
-
-    const userData = userDoc.data();
-    const userEmail = userData.email || "admin";
-
-    // Generate TOTP secret
+    // Generate a new secret
     const secret = authenticator.generateSecret();
 
-    if (!secret) {
-      throw new Error("Failed to generate 2FA secret");
-    }
-
-    // Generate QR code using email instead of UID for better UX and security
+    // Generate QR code
     const qrCode = await QRCode.toDataURL(
-      authenticator.keyuri(userEmail, "Tripesa Safari Admin", secret)
+      authenticator.keyuri("admin@tripesa.co", "Tripesa Safari Admin", secret)
     );
 
     // Generate backup codes
     const backupCodes = generateBackupCodes();
 
-    // Update user document with secret and backup codes (but don't enable yet)
-    await updateDoc(doc(db, "admin-users", userId), {
+    // Update user document with 2FA info
+    await updateDoc(doc(getFirebaseDB(), "admin-users", userId), {
       twoFactorSecret: secret,
-      backupCodes: backupCodes,
-      // Note: twoFactorEnabled remains false until verified
+      twoFactorEnabled: false, // Will be enabled after verification
     });
 
-    return { secret: secret, qrCode, backupCodes };
-  } catch (error) {
-    console.error("Setup 2FA error:", error);
-    throw error;
+    return {
+      secret,
+      qrCode,
+      backupCodes,
+    };
+  } catch (error: any) {
+    console.error("Error setting up 2FA:", error);
+    throw new Error("Failed to setup 2FA");
   }
 };
 
@@ -200,51 +239,36 @@ export const verifyAndEnable2FA = async (
 ): Promise<boolean> => {
   try {
     // Get user document
-    const userDoc = await getDoc(doc(db, "admin-users", userId));
+    const userDoc = await getDoc(doc(getFirebaseDB(), "admin-users", userId));
     if (!userDoc.exists()) {
       throw new Error("User not found");
     }
 
-    const userData = userDoc.data();
+    const userData = userDoc.data() as AdminUser;
     const secret = userData.twoFactorSecret;
 
     if (!secret) {
       throw new Error("2FA not set up");
     }
 
-    // Ensure the code is a string and trim whitespace
-    const cleanCode = String(code).trim();
-
-    // Ensure the secret is a string and trim whitespace
-    const cleanSecret = String(secret).trim();
-
-    if (!cleanCode || !cleanSecret) {
-      throw new Error("Invalid code or secret");
-    }
-
-    // Validate code format (must be 6 digits)
-    if (!/^\d{6}$/.test(cleanCode)) {
-      throw new Error("Invalid code format - must be 6 digits");
-    }
-
-    // Use otplib to verify the code
+    // Verify the code
     const isValid = authenticator.verify({
-      secret: cleanSecret,
-      token: cleanCode,
+      secret,
+      token: code,
     });
 
     if (isValid) {
       // Enable 2FA
-      await updateDoc(doc(db, "admin-users", userId), {
+      await updateDoc(doc(getFirebaseDB(), "admin-users", userId), {
         twoFactorEnabled: true,
       });
       return true;
     }
 
     return false;
-  } catch (error) {
-    console.error("Verify 2FA error:", error);
-    throw error;
+  } catch (error: any) {
+    console.error("Error verifying 2FA:", error);
+    throw new Error("Failed to verify 2FA");
   }
 };
 
@@ -254,31 +278,33 @@ export const verifyBackupCode = async (
   backupCode: string
 ): Promise<boolean> => {
   try {
-    const userDoc = await getDoc(doc(db, "admin-users", userId));
+    // Get user document
+    const userDoc = await getDoc(doc(getFirebaseDB(), "admin-users", userId));
     if (!userDoc.exists()) {
       return false;
     }
 
-    const userData = userDoc.data();
+    const userData = userDoc.data() as AdminUser;
     const backupCodes = userData.backupCodes || [];
 
-    // Check if backup code exists and is unused
+    // Find and mark backup code as used
     const codeIndex = backupCodes.findIndex(
-      (code: any) => code.code === backupCode && !code.used
+      (code) => code.code === backupCode && !code.used
     );
 
-    if (codeIndex !== -1) {
-      // Mark backup code as used
-      backupCodes[codeIndex].used = true;
-      await updateDoc(doc(db, "admin-users", userId), {
-        backupCodes: backupCodes,
-      });
-      return true;
+    if (codeIndex === -1) {
+      return false;
     }
 
-    return false;
-  } catch (error) {
-    console.error("Verify backup code error:", error);
+    // Mark code as used
+    backupCodes[codeIndex].used = true;
+    await updateDoc(doc(getFirebaseDB(), "admin-users", userId), {
+      backupCodes,
+    });
+
+    return true;
+  } catch (error: any) {
+    console.error("Error verifying backup code:", error);
     return false;
   }
 };
@@ -288,181 +314,187 @@ export const generateNewBackupCodes = async (
   userId: string
 ): Promise<string[]> => {
   try {
-    const newBackupCodes = generateBackupCodes();
-
-    await updateDoc(doc(db, "admin-users", userId), {
-      backupCodes: newBackupCodes,
+    const backupCodes = generateBackupCodes();
+    await updateDoc(doc(getFirebaseDB(), "admin-users", userId), {
+      backupCodes,
     });
-
-    return newBackupCodes.map((code: any) => code.code);
-  } catch (error) {
-    console.error("Generate new backup codes error:", error);
-    throw error;
+    return backupCodes.map((code) => code.code);
+  } catch (error: any) {
+    console.error("Error generating backup codes:", error);
+    throw new Error("Failed to generate backup codes");
   }
 };
 
-// Disable 2FA for admin user
+// Disable 2FA
 export const disableTwoFactor = async (userId: string): Promise<void> => {
   try {
-    await updateDoc(doc(db, "admin-users", userId), {
+    await updateDoc(doc(getFirebaseDB(), "admin-users", userId), {
       twoFactorEnabled: false,
       twoFactorSecret: null,
+      backupCodes: null,
     });
-  } catch (error) {
-    console.error("Disable 2FA error:", error);
-    throw error;
+  } catch (error: any) {
+    console.error("Error disabling 2FA:", error);
+    throw new Error("Failed to disable 2FA");
   }
 };
 
 // Change password
 export const changePassword = async (newPassword: string): Promise<void> => {
   try {
+    const auth = getFirebaseAuth();
     const user = auth.currentUser;
-    if (!user) throw new Error("No user logged in");
+
+    if (!user) {
+      throw new Error("No user logged in");
+    }
 
     await updatePassword(user, newPassword);
-  } catch (error) {
-    console.error("Change password error:", error);
-    throw error;
+  } catch (error: any) {
+    console.error("Error changing password:", error);
+    throw new Error("Failed to change password");
   }
 };
 
-// Reset password (send email)
+// Reset password
 export const resetPassword = async (email: string): Promise<void> => {
   try {
-    await sendPasswordResetEmail(auth, email);
-  } catch (error) {
-    console.error("Reset password error:", error);
-    throw error;
+    await sendPasswordResetEmail(getFirebaseAuth(), email);
+  } catch (error: any) {
+    console.error("Error resetting password:", error);
+    throw new Error("Failed to send password reset email");
   }
 };
 
 // Get current admin user
 export const getCurrentAdminUser = async (): Promise<AdminUser | null> => {
   try {
+    const auth = getFirebaseAuth();
     const user = auth.currentUser;
 
     if (!user) {
-      // User not authenticated in Firebase Auth
       return null;
     }
 
-    const userDoc = await getDoc(doc(db, "admin-users", user.uid));
+    const userDoc = await getDoc(doc(getFirebaseDB(), "admin-users", user.uid));
 
     if (!userDoc.exists()) {
-      // User authenticated in Firebase Auth but not in admin collection
-      console.warn("User authenticated but not found in admin collection");
       return null;
     }
 
-    const userData = userDoc.data();
+    const userData = userDoc.data() as AdminUser;
 
-    // Check if user is active
-    if (!userData.isActive) {
-      console.warn("User account is deactivated");
-      return null;
-    }
-
+    // Convert Firestore Timestamps to Date objects
     return {
-      uid: user.uid,
       ...userData,
-    } as AdminUser;
-  } catch (error) {
-    console.error("Get current admin user error:", error);
+      uid: user.uid,
+      createdAt:
+        userData.createdAt instanceof Date
+          ? userData.createdAt
+          : (userData.createdAt as any)?.toDate?.() || new Date(),
+      lastLogin:
+        userData.lastLogin instanceof Date
+          ? userData.lastLogin
+          : (userData.lastLogin as any)?.toDate?.() || undefined,
+    };
+  } catch (error: any) {
+    console.error("Error getting current admin user:", error);
     return null;
   }
 };
 
-// Get all admin users (for super-admin)
+// Get all admin users
 export const getAllAdminUsers = async (): Promise<AdminUser[]> => {
   try {
-    const querySnapshot = await getDocs(collection(db, "admin-users"));
-    return querySnapshot.docs.map((doc) => ({
-      uid: doc.id,
-      ...doc.data(),
-    })) as AdminUser[];
-  } catch (error) {
+    const q = query(collection(getFirebaseDB(), "admin-users"));
+    const querySnapshot = await getDocs(q);
+
+    const users: AdminUser[] = [];
+    querySnapshot.forEach((doc) => {
+      const userData = doc.data() as AdminUser;
+
+      // Convert Firestore Timestamps to Date objects
+      users.push({
+        ...userData,
+        uid: doc.id,
+        createdAt:
+          userData.createdAt instanceof Date
+            ? userData.createdAt
+            : (userData.createdAt as any)?.toDate?.() || new Date(),
+        lastLogin:
+          userData.lastLogin instanceof Date
+            ? userData.lastLogin
+            : (userData.lastLogin as any)?.toDate?.() || undefined,
+      });
+    });
+
+    return users;
+  } catch (error: any) {
     console.error("Get all admin users error:", error);
-    throw error;
+    throw new Error("Failed to get admin users");
   }
 };
 
-// Deactivate admin user
+// Deactivate admin user (removed - now handled by API route)
 export const deactivateAdminUser = async (userId: string): Promise<void> => {
   try {
-    await updateDoc(doc(db, "admin-users", userId), {
+    await updateDoc(doc(getFirebaseDB(), "admin-users", userId), {
       isActive: false,
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Deactivate admin user error:", error);
-    throw error;
+    throw new Error("Failed to deactivate user");
   }
 };
 
-// Activate admin user
+// Activate admin user (removed - now handled by API route)
 export const activateAdminUser = async (userId: string): Promise<void> => {
   try {
-    await updateDoc(doc(db, "admin-users", userId), {
+    await updateDoc(doc(getFirebaseDB(), "admin-users", userId), {
       isActive: true,
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Activate admin user error:", error);
-    throw error;
+    throw new Error("Failed to activate user");
   }
 };
 
-// Logout
+// Admin logout
 export const adminLogout = async (): Promise<void> => {
   try {
-    await signOut(auth);
-  } catch (error) {
-    console.error("Logout error:", error);
-    throw error;
+    await signOut(getFirebaseAuth());
+  } catch (error: any) {
+    console.error("Admin logout error:", error);
+    throw new Error("Failed to logout");
   }
 };
 
-// Auth state listener
+// Auth state change listener
 export const onAuthStateChange = (callback: (user: User | null) => void) => {
-  return onAuthStateChanged(auth, callback);
+  return onAuthStateChanged(getFirebaseAuth(), callback);
 };
 
-// Helper functions
+// Helper function to verify 2FA code
 const verifyTwoFactorCode = (secret: string, code: string): boolean => {
-  // Validate secret format (should be base32)
-  if (!secret || typeof secret !== "string") {
-    throw new Error("Invalid secret format");
-  }
-
-  // Validate code format (should be 6 digits)
-  if (
-    !code ||
-    typeof code !== "string" ||
-    code.length !== 6 ||
-    !/^\d{6}$/.test(code)
-  ) {
-    throw new Error("Invalid code format - must be 6 digits");
-  }
-
   try {
-    // Use otplib to verify the code
-    const isValid = authenticator.verify({
-      secret: secret,
+    return authenticator.verify({
+      secret,
       token: code,
     });
-    return isValid;
   } catch (error) {
-    console.error("TOTP verification error:", error);
-    throw new Error("Failed to verify 2FA code");
+    console.error("Error verifying 2FA code:", error);
+    return false;
   }
 };
 
 // Helper function to generate backup codes
 const generateBackupCodes = (): Array<{ code: string; used: boolean }> => {
-  const codes = [];
+  const codes: Array<{ code: string; used: boolean }> = [];
+
   for (let i = 0; i < 10; i++) {
-    // Generate 8-character alphanumeric codes
-    const code = Math.random().toString(36).substring(2, 10).toUpperCase();
+    const code = Math.random().toString(36).substring(2, 8).toUpperCase();
     codes.push({ code, used: false });
   }
+
   return codes;
 };

@@ -4,19 +4,14 @@ import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Head from "next/head";
 import AdminLayout from "@/components/admin/AdminLayout";
-import {
-  getCurrentAdminUser,
-  onAuthStateChange,
-  AdminUser,
-} from "@/lib/firebase/auth";
+import { useAuth } from "@/components/common/AuthProvider";
 
 export default function AdminLayoutWrapper({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const [currentUser, setCurrentUser] = useState<AdminUser | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const { user, adminUser, loading } = useAuth();
   const [authError, setAuthError] = useState<string | null>(null);
   const router = useRouter();
   const pathname = usePathname();
@@ -64,57 +59,21 @@ export default function AdminLayoutWrapper({
     };
   }, [pathname, isLoginPage]);
 
+  // Handle authentication state changes
   useEffect(() => {
     if (isLoginPage) {
-      setIsLoading(false);
       return;
     }
 
-    loadCurrentUser();
-
-    // Listen for auth state changes with better error handling
-    const unsubscribe = onAuthStateChange((user) => {
-      if (!user && !isLoginPage) {
-        // User signed out, redirect to login
-        setCurrentUser(null);
-        setAuthError("Session expired. Please log in again.");
-        router.replace("/admin/login");
-      } else if (user && !currentUser) {
-        // User signed in, reload user data
-        loadCurrentUser();
-      }
-    });
-
-    return () => unsubscribe();
-  }, [router, isLoginPage, pathname]);
-
-  const loadCurrentUser = async () => {
-    try {
-      setIsLoading(true);
-      setAuthError(null);
-
-      const user = await getCurrentAdminUser();
-
-      if (!user) {
+    if (!loading) {
+      if (!user || !adminUser) {
         setAuthError("Authentication required. Please log in.");
         router.replace("/admin/login");
-        return;
+      } else {
+        setAuthError(null);
       }
-
-      setCurrentUser(user);
-    } catch (error) {
-      console.error("Error loading current user:", error);
-      setAuthError(
-        error instanceof Error ? error.message : "Authentication failed"
-      );
-      // Add a delay before redirecting to prevent rapid redirects
-      setTimeout(() => {
-        router.replace("/admin/login");
-      }, 1000);
-    } finally {
-      setIsLoading(false);
     }
-  };
+  }, [user, adminUser, loading, isLoginPage, router]);
 
   // For login page, render without AdminLayout wrapper
   if (isLoginPage) {
@@ -122,7 +81,7 @@ export default function AdminLayoutWrapper({
   }
 
   // Show loading state
-  if (isLoading) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center pt-16">
         <div className="text-center">
@@ -136,7 +95,7 @@ export default function AdminLayoutWrapper({
   }
 
   // Show error state
-  if (authError || !currentUser) {
+  if (authError || !user || !adminUser) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center pt-16">
         <div className="text-center">
@@ -173,5 +132,5 @@ export default function AdminLayoutWrapper({
   }
 
   // Render with AdminLayout wrapper
-  return <AdminLayout currentUser={currentUser}>{children}</AdminLayout>;
+  return <AdminLayout currentUser={adminUser}>{children}</AdminLayout>;
 }

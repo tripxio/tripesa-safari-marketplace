@@ -36,6 +36,7 @@ const navigation = [
   { name: "Users", href: "/admin/users", icon: Users },
   { name: "Tours", href: "/admin/tours", icon: Package },
   { name: "2FA Setup", href: "/admin/2fa-setup", icon: Shield },
+  { name: "Settings", href: "/admin/settings", icon: Settings },
 ];
 
 export default function AdminLayout({

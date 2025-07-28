@@ -18,11 +18,12 @@ import {
   Edit,
   Lock,
   Unlock,
+  CheckCircle,
+  AlertCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
   getAllAdminUsers,
-  createAdminUser,
   activateAdminUser,
   deactivateAdminUser,
   setupTwoFactor,
@@ -30,6 +31,29 @@ import {
   AdminUser,
 } from "@/lib/firebase/auth";
 import { logAdminAction } from "@/lib/firebase/analytics";
+import { validateEmail } from "@/lib/utils/email-validation";
+
+// Helper function to format dates safely
+const formatDate = (date: any): string => {
+  if (!date) return "Unknown";
+
+  try {
+    const dateObj = new Date(date);
+    if (isNaN(dateObj.getTime())) {
+      return "Invalid Date";
+    }
+    return (
+      dateObj.toLocaleDateString() +
+      " " +
+      dateObj.toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    );
+  } catch (error) {
+    return "Invalid Date";
+  }
+};
 
 export default function AdminUserManager() {
   const [users, setUsers] = useState<AdminUser[]>([]);
@@ -37,11 +61,13 @@ export default function AdminUserManager() {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
   const [isCreating, setIsCreating] = useState(false);
+  const [emailError, setEmailError] = useState<string>("");
+  const [emailExists, setEmailExists] = useState<boolean | null>(null);
+  const [isCheckingEmail, setIsCheckingEmail] = useState(false);
 
   // Create user form state
   const [newUser, setNewUser] = useState({
     email: "",
-    password: "",
     name: "",
     role: "admin" as "admin" | "super-admin",
   });
@@ -49,6 +75,60 @@ export default function AdminUserManager() {
   useEffect(() => {
     loadUsers();
   }, []);
+
+  // Email validation effect
+  useEffect(() => {
+    if (newUser.email) {
+      if (!validateEmail(newUser.email)) {
+        setEmailError("Please enter a valid email address");
+        setEmailExists(null);
+      } else {
+        setEmailError("");
+        // Check if email exists (debounced)
+        const timeoutId = setTimeout(() => {
+          checkEmailExists(newUser.email);
+        }, 500); // Wait 500ms after user stops typing
+
+        return () => clearTimeout(timeoutId);
+      }
+    } else {
+      setEmailError("");
+      setEmailExists(null);
+    }
+  }, [newUser.email]);
+
+  // Check if email exists
+  const checkEmailExists = async (email: string) => {
+    if (!validateEmail(email)) return;
+
+    setIsCheckingEmail(true);
+    try {
+      const response = await fetch("/api/admin/check-email", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setEmailExists(data.exists);
+        if (data.exists) {
+          setEmailError("An admin user with this email address already exists");
+        } else {
+          setEmailError("");
+        }
+      } else {
+        console.error("Error checking email:", data.error);
+      }
+    } catch (error) {
+      console.error("Error checking email:", error);
+    } finally {
+      setIsCheckingEmail(false);
+    }
+  };
 
   const loadUsers = async () => {
     try {
@@ -65,30 +145,55 @@ export default function AdminUserManager() {
 
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Client-side validation
+    if (!validateEmail(newUser.email)) {
+      toast.error("Please enter a valid email address");
+      return;
+    }
+
+    if (!newUser.name.trim()) {
+      toast.error("Please enter a valid name");
+      return;
+    }
+
     setIsCreating(true);
 
     try {
-      await createAdminUser(
-        newUser.email,
-        newUser.password,
-        newUser.name,
-        newUser.role
-      );
-
-      logAdminAction("create_user", newUser.email);
-      toast.success("Admin user created successfully!");
-
-      // Reset form
-      setNewUser({
-        email: "",
-        password: "",
-        name: "",
-        role: "admin",
+      const response = await fetch("/api/admin/create-user", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: newUser.email,
+          name: newUser.name,
+          role: newUser.role,
+        }),
       });
-      setShowCreateForm(false);
 
-      // Reload users
-      await loadUsers();
+      const data = await response.json();
+
+      if (response.ok) {
+        logAdminAction("create_user", newUser.email);
+        toast.success("Admin user created successfully!", {
+          description: `An email with login credentials has been sent to ${newUser.email}`,
+        });
+
+        // Reset form
+        setNewUser({
+          email: "",
+          name: "",
+          role: "admin",
+        });
+        setShowCreateForm(false);
+        setEmailError("");
+
+        // Reload users
+        await loadUsers();
+      } else {
+        toast.error(data.error || "Failed to create admin user");
+      }
     } catch (error: any) {
       console.error("Error creating user:", error);
       toast.error(error.message || "Failed to create admin user");
@@ -99,16 +204,35 @@ export default function AdminUserManager() {
 
   const handleToggleUserStatus = async (user: AdminUser) => {
     try {
-      if (user.isActive) {
-        await deactivateAdminUser(user.uid);
-        logAdminAction("deactivate_user", user.email);
-        toast.success("User deactivated successfully");
+      const action = user.isActive ? "deactivate" : "activate";
+
+      const response = await fetch("/api/admin/manage-user", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          action,
+          userId: user.uid,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        logAdminAction(
+          action === "deactivate" ? "deactivate_user" : "activate_user",
+          user.email
+        );
+        toast.success(
+          action === "deactivate"
+            ? "User deactivated successfully"
+            : "User activated successfully"
+        );
+        await loadUsers();
       } else {
-        await activateAdminUser(user.uid);
-        logAdminAction("activate_user", user.email);
-        toast.success("User activated successfully");
+        toast.error(data.error || "Failed to update user status");
       }
-      await loadUsers();
     } catch (error) {
       console.error("Error toggling user status:", error);
       toast.error("Failed to update user status");
@@ -219,37 +343,50 @@ export default function AdminUserManager() {
                   >
                     Email Address
                   </Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={newUser.email}
-                    onChange={(e) =>
-                      setNewUser({ ...newUser, email: e.target.value })
-                    }
-                    placeholder="admin@tripesa.co"
-                    required
-                    className="mt-1 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                  />
-                </div>
-                <div>
-                  <Label
-                    htmlFor="password"
-                    className="text-sm font-medium text-gray-900 dark:text-white"
-                  >
-                    Password
-                  </Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    value={newUser.password}
-                    onChange={(e) =>
-                      setNewUser({ ...newUser, password: e.target.value })
-                    }
-                    placeholder="Enter password"
-                    required
-                    minLength={6}
-                    className="mt-1 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                  />
+                  <div className="relative">
+                    <Input
+                      id="email"
+                      type="email"
+                      value={newUser.email}
+                      onChange={(e) =>
+                        setNewUser({ ...newUser, email: e.target.value })
+                      }
+                      placeholder="admin@tripesa.co"
+                      required
+                      className={`mt-1 pr-10 dark:bg-gray-700 dark:border-gray-600 dark:text-white ${
+                        newUser.email && !emailError && emailExists === false
+                          ? "border-green-500 focus:border-green-500 focus:ring-green-500"
+                          : emailError
+                          ? "border-red-500 focus:border-red-500 focus:ring-red-500"
+                          : ""
+                      }`}
+                    />
+                    {newUser.email && (
+                      <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                        {isCheckingEmail ? (
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
+                        ) : emailError ? (
+                          <AlertCircle className="h-4 w-4 text-red-500" />
+                        ) : emailExists === false ? (
+                          <CheckCircle className="h-4 w-4 text-green-500" />
+                        ) : emailExists === true ? (
+                          <AlertCircle className="h-4 w-4 text-red-500" />
+                        ) : null}
+                      </div>
+                    )}
+                  </div>
+                  {emailError && (
+                    <p className="mt-1 text-sm text-red-500 dark:text-red-400">
+                      <AlertCircle className="h-4 w-4 inline-block mr-1" />
+                      {emailError}
+                    </p>
+                  )}
+                  {newUser.email && !emailError && emailExists === false && (
+                    <p className="mt-1 text-sm text-green-500 dark:text-green-400">
+                      <CheckCircle className="h-4 w-4 inline-block mr-1" />
+                      Email is available
+                    </p>
+                  )}
                 </div>
                 <div>
                   <Label
@@ -276,13 +413,32 @@ export default function AdminUserManager() {
                 </div>
               </div>
               <div className="flex space-x-3">
-                <Button type="submit" disabled={isCreating}>
+                <Button
+                  type="submit"
+                  disabled={
+                    isCreating ||
+                    !!emailError ||
+                    !newUser.name.trim() ||
+                    !newUser.email.trim() ||
+                    emailExists === true ||
+                    isCheckingEmail
+                  }
+                >
                   {isCreating ? "Creating..." : "Create User"}
                 </Button>
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => setShowCreateForm(false)}
+                  onClick={() => {
+                    setShowCreateForm(false);
+                    setEmailError("");
+                    setEmailExists(null);
+                    setNewUser({
+                      email: "",
+                      name: "",
+                      role: "admin",
+                    });
+                  }}
                 >
                   Cancel
                 </Button>
@@ -348,11 +504,10 @@ export default function AdminUserManager() {
                       {user.email}
                     </p>
                     <p className="text-xs text-gray-500 dark:text-gray-500">
-                      Created: {new Date(user.createdAt).toLocaleDateString()}
+                      Created: {formatDate(user.createdAt)}
                       {user.lastLogin && (
                         <span className="ml-2">
-                          • Last login:{" "}
-                          {new Date(user.lastLogin).toLocaleDateString()}
+                          • Last login: {formatDate(user.lastLogin)}
                         </span>
                       )}
                     </p>

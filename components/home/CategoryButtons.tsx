@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { logButtonClick } from "@/lib/firebase/analytics";
 
 const categories = [
   { name: "Explore Tours", href: "/tours" },
@@ -29,6 +30,9 @@ const CategoryButtons = () => {
               <Link
                 key={category.name}
                 href={category.href}
+                onClick={() =>
+                  logButtonClick(category.name, "category_buttons")
+                }
                 className="inline-block bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 px-6 rounded-lg transition duration-300 ease-in-out transform hover:-translate-y-1"
               >
                 {category.name}

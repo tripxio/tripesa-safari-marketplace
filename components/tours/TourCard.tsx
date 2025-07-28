@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Heart, Star, Users, Clock, MapPin, Calendar } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,11 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import type { TourPackage } from "@/lib/types";
 import TourOperatorInfo from "./TourOperatorInfo";
+import {
+  logTourView,
+  logTourBookingClick,
+  logTourFavorite,
+} from "@/lib/firebase/analytics";
 
 interface TourCardProps {
   tour: TourPackage;
@@ -72,6 +77,11 @@ export default function TourCard({
       )}
     </div>
   );
+
+  useEffect(() => {
+    // Track tour view when component mounts
+    logTourView(tour.id.toString(), tour.title);
+  }, [tour.id, tour.title]);
 
   if (viewMode === "list") {
     return (
@@ -146,6 +156,14 @@ export default function TourCard({
                   asChild
                   size="sm"
                   className="bg-orange-500 hover:bg-orange-600"
+                  onClick={() => {
+                    logTourBookingClick(
+                      tour.id.toString(),
+                      tour.title,
+                      tour.display_price || undefined,
+                      "tour_card_list"
+                    );
+                  }}
                 >
                   <Link href={tourUrl}>Book Now</Link>
                 </Button>
@@ -171,7 +189,14 @@ export default function TourCard({
           variant="ghost"
           size="icon"
           className="absolute top-4 right-4 bg-white/20 backdrop-blur hover:bg-white/30"
-          onClick={onToggleWishlist}
+          onClick={() => {
+            onToggleWishlist();
+            logTourFavorite(
+              tour.id.toString(),
+              tour.title,
+              isWishlisted ? "remove" : "add"
+            );
+          }}
         >
           <Heart
             className={`h-5 w-5 ${
@@ -224,6 +249,14 @@ export default function TourCard({
               asChild
               size="sm"
               className="bg-orange-500 hover:bg-orange-600"
+              onClick={() => {
+                logTourBookingClick(
+                  tour.id.toString(),
+                  tour.title,
+                  tour.display_price || undefined,
+                  "tour_card_grid"
+                );
+              }}
             >
               <Link href={tourUrl}>Book Now</Link>
             </Button>

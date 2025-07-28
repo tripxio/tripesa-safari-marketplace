@@ -1,14 +1,24 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  eslint: {
-    ignoreDuringBuilds: true,
+  experimental: {
+    serverComponentsExternalPackages: ['@getbrevo/brevo'],
   },
-  typescript: {
-    ignoreBuildErrors: true,
+  httpAgentOptions: {
+    keepAlive: false,
   },
-  images: {
-    unoptimized: true,
+  webpack: (config, { isServer }) => {
+    if (!isServer) {
+      // Don't bundle server-only packages on the client side
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        net: false,
+        tls: false,
+        fs: false,
+        crypto: false,
+      };
+    }
+    return config;
   },
-}
+};
 
-export default nextConfig
+export default nextConfig;
