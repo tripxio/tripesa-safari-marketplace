@@ -197,7 +197,7 @@ NEXT_PUBLIC_APP_URL=https://tripesa.co
 If you prefer to use Gmail SMTP instead of Resend:
 
 ```bash
-# Gmail SMTP Configuration
+# Gmail SMTP Configurations
 SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
 SMTP_USER=your-email@gmail.com
