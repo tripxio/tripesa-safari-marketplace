@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import ThemeToggle from "@/components/common/ThemeToggle";
 import { useTheme } from "@/components/common/ThemeProvider";
 import { Palette, Sun, Moon, Eye, Code } from "lucide-react";
+import { ThemeColors } from "@/lib/firebase/config-service";
 
 export default function ThemeDemoPage() {
   const { mode, config, isLoading } = useTheme();
@@ -23,7 +24,7 @@ export default function ThemeDemoPage() {
     );
   }
 
-  const currentColors = config?.[mode] || {
+  const currentColors: ThemeColors = config?.[mode] || {
     primary: "#f97316",
     secondary: "#64748b",
     accent: "#8b5cf6",
@@ -81,7 +82,7 @@ export default function ThemeDemoPage() {
                 <div key={key} className="text-center">
                   <div
                     className="w-full h-20 rounded-lg mb-2 border-2 border-gray-200 dark:border-gray-700"
-                    style={{ backgroundColor: color }}
+                    style={{ backgroundColor: color as string }}
                   />
                   <p className="text-sm font-medium capitalize">{key}</p>
                   <p className="text-xs" style={{ color: currentColors.muted }}>
