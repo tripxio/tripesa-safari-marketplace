@@ -5,6 +5,9 @@ import TourCardSkeleton from "@/components/tours/TourCardSkeleton";
 
 interface ToursPageProps {
   searchParams: Promise<{
+    query?: string;
+    location?: string;
+    order?: string;
     category?: string;
     page?: string;
   }>;
@@ -12,9 +15,23 @@ interface ToursPageProps {
 
 export default async function ToursPage({ searchParams }: ToursPageProps) {
   const params = await searchParams;
+
+  // Parse search parameters
+  const query = params.query || null;
   const category = params.category || null;
+  const order = params.order || null;
   const page = parseInt(params.page || "1", 10);
-  const suspenseKey = `${category}-${page}`;
+
+  // Parse location if provided (format: "lat,lng")
+  let location = null;
+  if (params.location) {
+    const [lat, lng] = params.location.split(",").map(Number);
+    if (!isNaN(lat) && !isNaN(lng)) {
+      location = { lat, lng };
+    }
+  }
+
+  const suspenseKey = `${query}-${category}-${order}-${params.location}-${page}`;
 
   // This is a placeholder for viewMode. In a real app, you might get this
   // from searchParams as well, but that would require client-side navigation
@@ -39,7 +56,14 @@ export default async function ToursPage({ searchParams }: ToursPageProps) {
           </div>
         }
       >
-        <ToursList category={category} page={page} viewMode={viewMode} />
+        <ToursList
+          query={query}
+          category={category}
+          order={order}
+          location={location}
+          page={page}
+          viewMode={viewMode}
+        />
       </Suspense>
       {/* Pagination will be handled in a future step */}
     </ToursPageClient>

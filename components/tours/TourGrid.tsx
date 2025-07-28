@@ -29,13 +29,7 @@ export default function TourGrid({ tours, viewMode }: TourGridProps) {
       }
     >
       {tours.map((tour) => (
-        <TourCard
-          key={tour.id}
-          tour={tour}
-          viewMode={viewMode}
-          isWishlisted={false}
-          onToggleWishlist={() => {}}
-        />
+        <TourCard key={tour.id} tour={tour} viewMode={viewMode} />
       ))}
     </div>
   );

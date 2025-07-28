@@ -4,48 +4,36 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { Search, Heart, User, Menu, X } from "lucide-react";
+import { Search, User, Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import ThemeToggle from "@/components/common/ThemeToggle";
 
 export default function Header() {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const pathname = usePathname();
   const isHomePage = pathname === "/";
 
-  // Add scroll event listener
   useEffect(() => {
     const handleScroll = () => {
-      if (window.scrollY > 10) {
-        setIsScrolled(true);
-      } else {
-        setIsScrolled(false);
-      }
+      setIsScrolled(window.scrollY > 0);
     };
 
     window.addEventListener("scroll", handleScroll);
-
-    return () => {
-      window.removeEventListener("scroll", handleScroll);
-    };
+    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Determine header background class based on page and scroll state
-  const headerBgClass = isHomePage
-    ? isScrolled
-      ? "bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b"
-      : "bg-transparent border-b border-transparent"
-    : "bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b";
-
-  // Determine text color class based on page and scroll state
   const textColorClass =
     isHomePage && !isScrolled ? "text-white" : "text-foreground";
 
   return (
     <header
-      className={`fixed top-0 w-full z-50 transition-all duration-300 ${headerBgClass}`}
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+        isScrolled || !isHomePage
+          ? "bg-background/95 backdrop-blur border-b"
+          : "bg-transparent"
+      }`}
     >
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
@@ -98,13 +86,6 @@ export default function Header() {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
               <Input placeholder="Search..." className="pl-10 w-64" />
             </div>
-            <Button variant="ghost" size="icon">
-              <Heart
-                className={`h-5 w-5 ${
-                  isHomePage && !isScrolled ? "text-white" : ""
-                }`}
-              />
-            </Button>
             <Button variant="ghost" size="icon">
               <User
                 className={`h-5 w-5 ${
@@ -169,9 +150,6 @@ export default function Header() {
                 Contact
               </Link>
               <div className="flex items-center space-x-4 pt-4">
-                <Button variant="ghost" size="icon">
-                  <Heart className="h-5 w-5" />
-                </Button>
                 <Button variant="ghost" size="icon">
                   <User className="h-5 w-5" />
                 </Button>

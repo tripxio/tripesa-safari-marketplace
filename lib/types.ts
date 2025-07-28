@@ -18,7 +18,7 @@ export interface TourPackage {
   slug: string;
   short_description: string | null;
   description: string;
-  experience_duration: string | null;
+  experience_duration: string | number | null;
   display_price: string | null;
   city: string;
   country_code: string;
@@ -35,10 +35,11 @@ export interface TourPackage {
   currency: {
     code: string;
     symbol: string;
-  };
+  } | null;
   unit: {
     name: string;
   };
+  created_at?: string;
 }
 
 export interface ApiResponse {

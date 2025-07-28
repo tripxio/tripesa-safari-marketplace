@@ -1,45 +1,42 @@
 import { getTours } from "@/lib/services/api";
-import TourGridClient from "@/components/tours/TourGridClient";
-import PaginationControls from "@/components/tours/PaginationControls";
-import { TourPackage } from "@/lib/types";
+import ToursListClient from "@/components/tours/ToursListClient";
+import type { TourPackage } from "@/lib/types";
 
 interface ToursListProps {
+  query: string | null;
   category: string | null;
+  order: string | null;
+  location: { lat: number; lng: number } | null;
   page: number;
   viewMode: "grid" | "list";
 }
 
 export default async function ToursList({
+  query,
   category,
+  order,
+  location,
   page,
   viewMode,
 }: ToursListProps) {
   try {
-    const response = await getTours({ category }, page);
+    // Prepare filters for API call
+    const filters: any = {};
+    if (query) filters.query = query;
+    if (category) filters.category = category;
+    if (order) filters.order = order;
+    if (location) filters.location = location;
+
+    const response = await getTours(filters, page);
     const tours: TourPackage[] = response.data || [];
     const paginationMeta = response.meta;
 
-    if (tours.length === 0) {
-      return (
-        <div className="text-center py-12">
-          <h3 className="text-2xl font-bold">No Tours Found</h3>
-          <p className="text-muted-foreground mt-2">
-            Try adjusting your filters or search criteria.
-          </p>
-        </div>
-      );
-    }
-
     return (
-      <div>
-        <TourGridClient tours={tours} viewMode={viewMode} />
-        {paginationMeta && paginationMeta.last_page > 1 && (
-          <PaginationControls
-            lastPage={paginationMeta.last_page}
-            currentPage={paginationMeta.current_page}
-          />
-        )}
-      </div>
+      <ToursListClient
+        tours={tours}
+        viewMode={viewMode}
+        paginationMeta={paginationMeta}
+      />
     );
   } catch (error) {
     console.error("Error fetching tours:", error);

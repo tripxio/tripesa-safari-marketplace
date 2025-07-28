@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import TourCard from "./TourCard";
 import type { TourPackage } from "@/lib/types";
 
@@ -13,16 +12,6 @@ export default function TourGridClient({
   tours,
   viewMode,
 }: TourGridClientProps) {
-  const [wishlist, setWishlist] = useState<number[]>([]);
-
-  const toggleWishlist = (tourId: number) => {
-    setWishlist((prev) =>
-      prev.includes(tourId)
-        ? prev.filter((id) => id !== tourId)
-        : [...prev, tourId]
-    );
-  };
-
   return (
     <div
       className={
@@ -32,13 +21,7 @@ export default function TourGridClient({
       }
     >
       {tours.map((tour) => (
-        <TourCard
-          key={tour.id}
-          tour={tour}
-          viewMode={viewMode}
-          isWishlisted={wishlist.includes(tour.id)}
-          onToggleWishlist={() => toggleWishlist(tour.id)}
-        />
+        <TourCard key={tour.id} tour={tour} viewMode={viewMode} />
       ))}
     </div>
   );

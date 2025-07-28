@@ -1,32 +1,21 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Heart, Star, Users, Clock, MapPin, Calendar } from "lucide-react";
+import { Star, Users, Clock, MapPin, Calendar } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import type { TourPackage } from "@/lib/types";
 import TourOperatorInfo from "./TourOperatorInfo";
-import {
-  logTourView,
-  logTourBookingClick,
-  logTourFavorite,
-} from "@/lib/firebase/analytics";
+import { logTourView, logTourBookingClick } from "@/lib/firebase/analytics";
 
 interface TourCardProps {
   tour: TourPackage;
   viewMode: "grid" | "list";
-  isWishlisted: boolean;
-  onToggleWishlist: () => void;
 }
 
-export default function TourCard({
-  tour,
-  viewMode,
-  isWishlisted,
-  onToggleWishlist,
-}: TourCardProps) {
+export default function TourCard({ tour, viewMode }: TourCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
   const imageUrl =
@@ -35,7 +24,7 @@ export default function TourCard({
   const price = tour.display_price
     ? new Intl.NumberFormat("en-US", {
         style: "currency",
-        currency: tour.currency.code,
+        currency: tour.currency?.code || "USD",
         minimumFractionDigits: 0,
       }).format(parseFloat(tour.display_price))
     : "On Request";
@@ -95,18 +84,6 @@ export default function TourCard({
               />
             </Link>
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-            <Button
-              variant="ghost"
-              size="icon"
-              className="absolute top-4 right-4 bg-white/20 backdrop-blur hover:bg-white/30"
-              onClick={onToggleWishlist}
-            >
-              <Heart
-                className={`h-5 w-5 ${
-                  isWishlisted ? "fill-red-500 text-red-500" : "text-white"
-                }`}
-              />
-            </Button>
             <div className="absolute top-4 left-4">
               <Badge className="bg-orange-500 text-white">{price}</Badge>
             </div>
@@ -185,25 +162,6 @@ export default function TourCard({
           />
         </Link>
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-        <Button
-          variant="ghost"
-          size="icon"
-          className="absolute top-4 right-4 bg-white/20 backdrop-blur hover:bg-white/30"
-          onClick={() => {
-            onToggleWishlist();
-            logTourFavorite(
-              tour.id.toString(),
-              tour.title,
-              isWishlisted ? "remove" : "add"
-            );
-          }}
-        >
-          <Heart
-            className={`h-5 w-5 ${
-              isWishlisted ? "fill-red-500 text-red-500" : "text-white"
-            }`}
-          />
-        </Button>
         <div className="absolute top-4 left-4">
           <Badge className="bg-orange-500 text-white">{price}</Badge>
         </div>
