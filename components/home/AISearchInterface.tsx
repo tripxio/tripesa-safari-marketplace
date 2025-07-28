@@ -1,80 +1,146 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { X, Sparkles, Send, Loader2 } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Card } from "@/components/ui/card"
+import { useState, useEffect, useRef } from "react";
+import ReactMarkdown from "react-markdown";
+import { X, Sparkles, Send, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card } from "@/components/ui/card";
 
 interface AISearchInterfaceProps {
-  query: string
-  onClose: () => void
+  query: string;
+  onClose: () => void;
 }
 
 interface Message {
-  id: string
-  type: "user" | "ai"
-  content: string
-  timestamp: Date
+  id: string;
+  type: "user" | "ai";
+  content: string;
+  timestamp: Date;
 }
 
-export default function AISearchInterface({ query, onClose }: AISearchInterfaceProps) {
-  const [messages, setMessages] = useState<Message[]>([])
-  const [currentQuery, setCurrentQuery] = useState(query)
-  const [isLoading, setIsLoading] = useState(false)
+// Helper function to generate unique IDs
+const generateUniqueId = () => {
+  return Date.now().toString() + Math.random().toString(36).substring(2, 9);
+};
+
+export default function AISearchInterface({
+  query,
+  onClose,
+}: AISearchInterfaceProps) {
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [currentQuery, setCurrentQuery] = useState(query);
+  const [isLoading, setIsLoading] = useState(false);
+  const [sessionId, setSessionId] = useState("");
+  const [conversationId, setConversationId] = useState("");
+  const processedQueries = useRef<Set<string>>(new Set());
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (query) {
-      handleSearch(query)
+    // Generate session and conversation IDs when the component mounts
+    setSessionId(generateUniqueId());
+    setConversationId(generateUniqueId());
+  }, []);
+
+  useEffect(() => {
+    // Scroll to the bottom whenever messages change
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  useEffect(() => {
+    if (query && !processedQueries.current.has(query) && sessionId) {
+      processedQueries.current.add(query);
+      handleSearch(query);
     }
-  }, [query])
+  }, [query, sessionId]); // Depend on sessionId to ensure it's set
 
   const handleSearch = async (searchQuery: string) => {
-    if (!searchQuery.trim()) return
+    if (!searchQuery.trim() || !sessionId) return;
 
     const userMessage: Message = {
-      id: Date.now().toString(),
+      id: generateUniqueId(),
       type: "user",
       content: searchQuery,
       timestamp: new Date(),
-    }
+    };
 
-    setMessages((prev) => [...prev, userMessage])
-    setIsLoading(true)
+    setMessages((prev) => [...prev, userMessage]);
+    setIsLoading(true);
 
-    // Simulate AI response
-    setTimeout(() => {
-      const aiResponse: Message = {
-        id: (Date.now() + 1).toString(),
-        type: "ai",
-        content: generateAIResponse(searchQuery),
-        timestamp: new Date(),
+    console.log("Sending chat request with:", {
+      chatInput: searchQuery,
+      sessionId,
+      conversationId,
+    });
+
+    try {
+      const response = await fetch(
+        process.env.NEXT_PUBLIC_AI_CHAT_WEBHOOK_URL as string,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            chatInput: searchQuery,
+            sessionId,
+            conversationId,
+          }),
+        }
+      );
+
+      console.log("Raw API response:", response);
+      console.log("Response status:", response.status);
+
+      if (!response.ok) {
+        throw new Error(
+          `Network response was not ok. Status: ${response.status}`
+        );
       }
-      setMessages((prev) => [...prev, aiResponse])
-      setIsLoading(false)
-    }, 1500)
 
-    setCurrentQuery("")
-  }
+      const responseText = await response.text();
+      console.log("Raw response text:", responseText);
 
-  const generateAIResponse = (query: string): string => {
-    const responses = {
-      gorilla:
-        "I found some amazing gorilla trekking experiences! Uganda's Bwindi Impenetrable Forest offers the best gorilla encounters. Here are 3 top-rated packages: 1) 3-day Bwindi Gorilla Trek ($1,200) 2) 5-day Uganda Gorilla & Wildlife ($2,100) 3) 7-day Rwanda-Uganda Gorilla Adventure ($3,500). All include permits, accommodation, and expert guides.",
-      luxury:
-        "For luxury safari experiences, I recommend these premium packages: 1) 6-day Serengeti Luxury Lodge Safari ($4,500) - Stay at Four Seasons Safari Lodge 2) 8-day Kenya Luxury Safari ($5,200) - Private conservancies and luxury camps 3) 10-day Tanzania Premium Circuit ($6,800) - Exclusive lodges and private game drives.",
-      budget:
-        "Great budget-friendly options available! 1) 4-day Masai Mara Budget Safari ($450) - Camping with shared facilities 2) 5-day Tanzania Budget Circuit ($680) - Basic lodges, group tours 3) 3-day Uganda Budget Wildlife ($320) - Camping in Queen Elizabeth NP. All include meals, transport, and park fees.",
-      default:
-        "I can help you find the perfect safari experience! Based on your interests, here are some personalized recommendations. Would you like me to show you specific packages for wildlife viewing, cultural experiences, or adventure activities? I can also filter by budget, duration, or destination.",
+      try {
+        const data = JSON.parse(responseText);
+        console.log("Parsed JSON data:", data);
+
+        const aiResponse: Message = {
+          id: generateUniqueId(),
+          type: "ai",
+          content: data.output || "Sorry, I couldn't get a response.",
+          timestamp: new Date(),
+        };
+        setMessages((prev) => [...prev, aiResponse]);
+      } catch (jsonError) {
+        console.error("Failed to parse JSON:", jsonError);
+        // If JSON parsing fails, maybe the raw text is the message.
+        const aiResponse: Message = {
+          id: generateUniqueId(),
+          type: "ai",
+          content:
+            responseText || "Received an invalid response from the server.",
+          timestamp: new Date(),
+        };
+        setMessages((prev) => [...prev, aiResponse]);
+      }
+    } catch (error) {
+      console.error("Error fetching AI response:", error);
+      const errorMessage: Message = {
+        id: generateUniqueId(),
+        type: "ai",
+        content: "Sorry, something went wrong. Please try again later.",
+        timestamp: new Date(),
+      };
+      setMessages((prev) => [...prev, errorMessage]);
+    } finally {
+      setIsLoading(false);
     }
 
-    const lowerQuery = query.toLowerCase()
-    if (lowerQuery.includes("gorilla")) return responses.gorilla
-    if (lowerQuery.includes("luxury") || lowerQuery.includes("premium")) return responses.luxury
-    if (lowerQuery.includes("budget") || lowerQuery.includes("cheap")) return responses.budget
-    return responses.default
-  }
+    setCurrentQuery("");
+  };
+
+  // generateAIResponse function is no longer needed
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -95,19 +161,32 @@ export default function AISearchInterface({ query, onClose }: AISearchInterfaceP
           {messages.length === 0 && (
             <div className="text-center text-muted-foreground py-8">
               <Sparkles className="h-12 w-12 mx-auto mb-4 text-orange-500" />
-              <p>Ask me anything about safaris, destinations, or tour packages!</p>
+              <p>
+                Ask me anything about safaris, destinations, or tour packages!
+              </p>
             </div>
           )}
 
           {messages.map((message) => (
-            <div key={message.id} className={`flex ${message.type === "user" ? "justify-end" : "justify-start"}`}>
+            <div
+              key={message.id}
+              className={`flex ${
+                message.type === "user" ? "justify-end" : "justify-start"
+              }`}
+            >
               <div
                 className={`max-w-[80%] p-3 rounded-lg ${
-                  message.type === "user" ? "bg-orange-500 text-white" : "bg-muted text-foreground"
+                  message.type === "user"
+                    ? "bg-orange-500 text-white"
+                    : "bg-muted text-foreground"
                 }`}
               >
-                <p className="whitespace-pre-wrap">{message.content}</p>
-                <p className="text-xs opacity-70 mt-1">{message.timestamp.toLocaleTimeString()}</p>
+                <div className="prose prose-sm max-w-none prose-p:my-0 prose-ul:my-0 prose-li:my-0">
+                  <ReactMarkdown>{message.content}</ReactMarkdown>
+                </div>
+                <p className="text-xs opacity-70 mt-1">
+                  {message.timestamp.toLocaleTimeString()}
+                </p>
               </div>
             </div>
           ))}
@@ -120,6 +199,7 @@ export default function AISearchInterface({ query, onClose }: AISearchInterfaceP
               </div>
             </div>
           )}
+          <div ref={messagesEndRef} />
         </div>
 
         {/* Input */}
@@ -129,15 +209,21 @@ export default function AISearchInterface({ query, onClose }: AISearchInterfaceP
               placeholder="Ask about safaris, destinations, or packages..."
               value={currentQuery}
               onChange={(e) => setCurrentQuery(e.target.value)}
-              onKeyPress={(e) => e.key === "Enter" && handleSearch(currentQuery)}
+              onKeyPress={(e) =>
+                e.key === "Enter" && handleSearch(currentQuery)
+              }
               disabled={isLoading}
             />
-            <Button onClick={() => handleSearch(currentQuery)} disabled={isLoading || !currentQuery.trim()} size="icon">
+            <Button
+              onClick={() => handleSearch(currentQuery)}
+              disabled={isLoading || !currentQuery.trim()}
+              size="icon"
+            >
               <Send className="h-4 w-4" />
             </Button>
           </div>
         </div>
       </Card>
     </div>
-  )
+  );
 }

@@ -1,55 +1,89 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Search, Mic, Sparkles } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import Link from "next/link";
+import { Search, Mic, Sparkles, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import AISearchInterface from "./AISearchInterface";
+import { logButtonClick } from "@/lib/firebase/analytics";
+import { getBannerConfig, BannerConfig } from "@/lib/firebase/config-service";
 
 export default function HeroSection() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showAISearch, setShowAISearch] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [bannerConfig, setBannerConfig] = useState<BannerConfig | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const backgroundImages = [
-    "https://ik.imagekit.io/54hg3nvcfg/zdenek-machacek-UxHol6SwLyM-unsplash.jpg?updatedAt=1752094873385",
-    "https://ik.imagekit.io/54hg3nvcfg/redcharlie-xtvo0ffGKlI-unsplash.jpg?updatedAt=1752094873358",
-    "https://ik.imagekit.io/54hg3nvcfg/max-christian-sMjVNtvYkD0-unsplash.jpg?updatedAt=1752095287325",
-    "https://ik.imagekit.io/54hg3nvcfg/photos-by-beks-B3fLaAAy6nU-unsplash.jpg?updatedAt=1752095287350",
-    "https://ik.imagekit.io/54hg3nvcfg/deon-de-villiers-7HRHhcueqZ8-unsplash.jpg?updatedAt=1752095287743",
-    "https://ik.imagekit.io/54hg3nvcfg/sutirta-budiman-PdiOj8kRy28-unsplash.jpg?updatedAt=1752095287980",
-    "https://ik.imagekit.io/54hg3nvcfg/clinton-mwebaze-bFDRtkC9Hmw-unsplash.jpg?updatedAt=1752095582636",
-    "https://ik.imagekit.io/54hg3nvcfg/nathan-cima-k3iU3W5QkBQ-unsplash.jpg?updatedAt=1752095583994",
-  ];
-
+  // Load banner configuration
   useEffect(() => {
+    const loadBannerConfig = async () => {
+      try {
+        setIsLoading(true);
+        const config = await getBannerConfig();
+        setBannerConfig(config);
+      } catch (error) {
+        console.error("Error loading banner config:", error);
+        // Fallback to default values if loading fails
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadBannerConfig();
+  }, []);
+
+  // Image rotation effect
+  useEffect(() => {
+    if (!bannerConfig?.images || bannerConfig.images.length === 0) return;
+
     const interval = setInterval(() => {
       setCurrentImageIndex(
-        (prevIndex) => (prevIndex + 1) % backgroundImages.length
+        (prevIndex) => (prevIndex + 1) % bannerConfig.images.length
       );
-    }, 5000); // Change image every 5 seconds
+    }, (bannerConfig.settings?.autoplayInterval || 5) * 1000);
 
     return () => clearInterval(interval);
-  }, [backgroundImages.length]);
+  }, [bannerConfig?.images, bannerConfig?.settings?.autoplayInterval]);
 
   const quickSuggestions = [
-    "Best gorilla trekking",
-    "Luxury safari packages",
-    "Budget-friendly tours",
-    "Tanzania wildlife",
-    "Uganda adventures",
+    { id: "gorilla", text: "Best gorilla trekking" },
+    { id: "luxury", text: "Luxury safari packages" },
+    { id: "budget", text: "Budget-friendly tours" },
+    { id: "tanzania", text: "Tanzania wildlife" },
+    { id: "uganda", text: "Uganda adventures" },
   ];
 
+  const handleSuggestionClick = useCallback((text: string) => {
+    setSearchQuery(text);
+    setShowAISearch(true);
+  }, []);
+
+  // Fallback values if config is not loaded
+  const images = bannerConfig?.images || [
+    "https://ik.imagekit.io/54hg3nvcfg/zdenek-machacek-UxHol6SwLyM-unsplash.jpg?updatedAt=1752094873385",
+    "https://ik.imagekit.io/54hg3nvcfg/redcharlie-xtvo0ffGKlI-unsplash.jpg?updatedAt=1752094873358",
+  ];
+
+  const mainTitle = bannerConfig?.text?.mainTitle || "Discover Africa's";
+  const subtitle = bannerConfig?.text?.subtitle || "Greatest Adventures";
+  const description =
+    bannerConfig?.text?.description ||
+    "AI-powered safari discovery that connects you to unforgettable experiences across the African continent";
+
   return (
-    <section className="relative h-[70vh] flex items-center justify-center overflow-hidden">
+    <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
       {/* Background Images */}
-      {backgroundImages.map((image, index) => (
+      {images.map((image, index) => (
         <div
-          key={index}
+          key={`bg-image-${index}`}
           className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-opacity duration-1000"
           style={{
-            backgroundImage: `url('${image}')`,
+            backgroundImage: `url('${
+              typeof image === "string" ? image : image.url
+            }')`,
             opacity: currentImageIndex === index ? 1 : 0,
           }}
         />
@@ -59,15 +93,14 @@ export default function HeroSection() {
       <div className="absolute inset-0 hero-gradient" />
 
       {/* Content */}
-      <div className="relative z-10 text-center max-w-4xl mx-auto px-4">
+      <div className="relative z-10 text-center max-w-4xl mx-auto px-4 pt-16">
         <h1 className="text-5xl md:text-7xl font-bold text-white mb-6 leading-tight">
-          Discover Africa's
-          <span className="block text-orange-400">Greatest Adventures</span>
+          {mainTitle}
+          <span className="block text-orange-400">{subtitle}</span>
         </h1>
 
         <p className="text-xl md:text-2xl text-gray-200 mb-12 max-w-2xl mx-auto">
-          AI-powered safari discovery that connects you to unforgettable
-          experiences across the African continent
+          {description}
         </p>
 
         {/* AI Search Interface */}
@@ -99,36 +132,51 @@ export default function HeroSection() {
 
         {/* Quick Suggestions */}
         <div className="flex flex-wrap justify-center gap-3 mb-8">
-          {quickSuggestions.map((suggestion, index) => (
+          {quickSuggestions.map((suggestion) => (
             <Badge
-              key={index}
+              key={suggestion.id}
               variant="secondary"
               className="bg-white/20 text-white hover:bg-white/30 cursor-pointer px-4 py-2 text-sm transition-all duration-200 hover:scale-105"
-              onClick={() => {
-                setSearchQuery(suggestion);
-                setShowAISearch(true);
-              }}
+              onClick={() => handleSuggestionClick(suggestion.text)}
             >
-              {suggestion}
+              {suggestion.text}
             </Badge>
           ))}
         </div>
 
         {/* CTA Buttons */}
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <Button
-            size="lg"
-            className="bg-orange-500 hover:bg-orange-600 text-white px-8 py-3 text-lg rounded-xl"
-          >
-            Explore Tours
-          </Button>
-          <Button
-            size="lg"
-            variant="outline"
-            className="border-white text-white hover:bg-white hover:text-gray-900 px-8 py-3 text-lg rounded-xl bg-transparent"
-          >
-            Watch Video
-          </Button>
+          <Link href="/tours">
+            <Button
+              size="lg"
+              className="bg-orange-500 hover:bg-orange-600 text-white px-8 py-3 text-lg rounded-xl"
+              onClick={() => logButtonClick("Explore Tours", "hero_section")}
+            >
+              Explore Tours
+            </Button>
+          </Link>
+          <Link href="/tours?category=day-trips">
+            <Button
+              size="lg"
+              className="bg-white/20 backdrop-blur text-white hover:bg-white/30 border border-white/30 px-8 py-3 text-lg rounded-xl"
+              onClick={() =>
+                logButtonClick("Explore Day Trips", "hero_section")
+              }
+            >
+              Explore Day Trips
+            </Button>
+          </Link>
+          <Link href="/tours?category=special-offers">
+            <Button
+              size="lg"
+              className="bg-white/20 backdrop-blur text-white hover:bg-white/30 border border-white/30 px-8 py-3 text-lg rounded-xl"
+              onClick={() =>
+                logButtonClick("Explore Special Offers", "hero_section")
+              }
+            >
+              Explore Special Offers
+            </Button>
+          </Link>
         </div>
       </div>
 

@@ -25,3 +25,10 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# sensitive files - never commit these
+google-analytics-key.json
+firebase-service-account-key.json
+*.pem
+*.p12
+*.key

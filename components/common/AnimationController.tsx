@@ -14,7 +14,8 @@ export default function AnimationController() {
   useEffect(() => {
     // Set specific animations for specific pages
     if (pathname.includes("/tours")) {
-      setAnimationType("car");
+      // setAnimationType("car"); // Car animation commented out for tours
+      setAnimationType("plane"); // Using plane animation instead
     } else if (pathname.includes("/destinations")) {
       setAnimationType("bicycle");
     } else {
@@ -22,6 +23,11 @@ export default function AnimationController() {
       setAnimationType("plane");
     }
   }, [pathname]);
+
+  // Don't render any animation on tours page or admin pages
+  if (pathname.includes("/tours") || pathname.includes("/admin")) {
+    return null;
+  }
 
   return (
     <TravelMotion

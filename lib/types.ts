@@ -1,31 +1,71 @@
+export interface Agency {
+  id: number;
+  name: string;
+  description: string;
+  slug: string;
+  address: string;
+  city: string;
+  country: string;
+  email_address: string;
+  phone_number: string;
+  logo: string;
+  url: string;
+}
+
 export interface TourPackage {
-  id: string
-  title: string
-  destination: string
-  duration: number
-  price: number
-  currency: string
-  rating: number
-  reviewCount: number
-  images: string[]
-  highlights: string[]
-  tourOperator: {
-    name: string
-    logo: string
-  }
-  accommodationType: "Budget" | "Mid-range" | "Luxury"
-  groupSize: "Private" | "Small group" | "Large group"
-  difficulty: "Easy" | "Moderate" | "Challenging"
-  category: "Wildlife" | "Gorilla trekking" | "Cultural" | "Adventure"
+  id: number;
+  title: string;
+  slug: string;
+  short_description: string | null;
+  description: string;
+  experience_duration: string | number | null;
+  display_price: string | null;
+  city: string;
+  country_code: string;
+  featured: boolean;
+  agency_id?: number; // Add agency_id to link to agency data
+  gallery: {
+    url: string;
+    thumbnail_url: string;
+  }[];
+  first_media: {
+    url: string;
+    thumbnail_url: string;
+  } | null;
+  currency: {
+    code: string;
+    symbol: string;
+  } | null;
+  unit: {
+    name: string;
+  };
+  created_at?: string;
+}
+
+export interface ApiResponse {
+  data: TourPackage[];
+  links: {
+    first: string;
+    last: string;
+    prev: string | null;
+    next: string | null;
+  };
+  meta: {
+    current_page: number;
+    from: number;
+    last_page: number;
+    to: number;
+    total: number;
+  };
 }
 
 export interface FilterState {
-  destinations: string[]
-  duration: [number, number]
-  priceRange: [number, number]
-  tourTypes: string[]
-  accommodationTypes: string[]
-  groupSizes: string[]
-  difficulty: string[]
-  rating: number
+  destinations: string[];
+  duration: [number, number];
+  priceRange: [number, number];
+  tourTypes: string[];
+  accommodationTypes: string[];
+  groupSizes: string[];
+  difficulty: string[];
+  rating: number;
 }

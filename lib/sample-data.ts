@@ -2,215 +2,290 @@ import type { TourPackage } from "./types";
 
 export const sampleTours: TourPackage[] = [
   {
-    id: "1",
-    title: "Ultimate Gorilla Trekking Adventure",
-    destination: "Uganda",
-    duration: 5,
-    price: 2450,
-    currency: "USD",
-    rating: 4.9,
-    reviewCount: 127,
-    images: [
-      "https://ik.imagekit.io/54hg3nvcfg/greg-gollin-i3srrRDsJEs-unsplash.jpg?updatedAt=1752095892120",
+    id: 1,
+    title: "Gorilla Trekking Adventure",
+    slug: "gorilla-trekking-adventure",
+    short_description:
+      "Experience the thrill of encountering mountain gorillas in their natural habitat",
+    description:
+      "Embark on an unforgettable journey to Bwindi Impenetrable National Park, home to nearly half of the world's remaining mountain gorillas. This guided trek takes you through dense rainforest where you'll spend precious moments observing these magnificent creatures in their natural environment.",
+    experience_duration: "1 day",
+    display_price: "1500",
+    city: "Bwindi",
+    country_code: "UG",
+    featured: true,
+    agency_id: 1,
+    gallery: [
+      {
+        url: "/images/gorilla-trekking-1.jpg",
+        thumbnail_url: "/images/gorilla-trekking-1-thumb.jpg",
+      },
+      {
+        url: "/images/gorilla-trekking-2.jpg",
+        thumbnail_url: "/images/gorilla-trekking-2-thumb.jpg",
+      },
     ],
-    highlights: [
-      "Mountain gorilla encounters in Bwindi Forest",
-      "Expert local guides and trackers",
-      "Luxury eco-lodge accommodation",
-      "Cultural village visits",
-      "All permits and transfers included",
-    ],
-    tourOperator: {
-      name: "Uganda Safari Co.",
-      logo: "https://ik.imagekit.io/54hg3nvcfg/Icons/syncplicity_873148.png?updatedAt=1752097575545",
+    first_media: {
+      url: "/images/gorilla-trekking-1.jpg",
+      thumbnail_url: "/images/gorilla-trekking-1-thumb.jpg",
     },
-    accommodationType: "Luxury",
-    groupSize: "Small group",
-    difficulty: "Moderate",
-    category: "Gorilla trekking",
+    currency: {
+      code: "USD",
+      symbol: "$",
+    },
+    unit: {
+      name: "per person",
+    },
   },
   {
-    id: "2",
-    title: "Serengeti Great Migration Safari",
-    destination: "Tanzania",
-    duration: 7,
-    price: 3200,
-    currency: "USD",
-    rating: 4.8,
-    reviewCount: 89,
-    images: [
-      "https://ik.imagekit.io/54hg3nvcfg/dawn-westveld-FmUx8z_Tz4A-unsplash.jpg?updatedAt=1752096189254"
+    id: 2,
+    title: "Serengeti Wildlife Safari",
+    slug: "serengeti-wildlife-safari",
+    short_description:
+      "Witness the great migration and diverse wildlife of the Serengeti",
+    description:
+      "Experience the magic of the Serengeti, one of Africa's most iconic wildlife destinations. This safari takes you through vast plains teeming with wildlife, including the famous Big Five. Witness the annual wildebeest migration and enjoy luxury accommodations under the African sky.",
+    experience_duration: "5 days",
+    display_price: "2800",
+    city: "Serengeti",
+    country_code: "TZ",
+    featured: true,
+    agency_id: 2,
+    gallery: [
+      {
+        url: "/images/serengeti-safari-1.jpg",
+        thumbnail_url: "/images/serengeti-safari-1-thumb.jpg",
+      },
+      {
+        url: "/images/serengeti-safari-2.jpg",
+        thumbnail_url: "/images/serengeti-safari-2-thumb.jpg",
+      },
     ],
-    highlights: [
-      "Witness the Great Migration",
-      "Big Five game viewing",
-      "Hot air balloon safari",
-      "Ngorongoro Crater exploration",
-      "Professional photography guide",
-    ],
-    tourOperator: {
-      name: "Serengeti Expeditions",
-      logo: "https://ik.imagekit.io/54hg3nvcfg/Icons/aeon_16147203.png?updatedAt=1752097575723",
+    first_media: {
+      url: "/images/serengeti-safari-1.jpg",
+      thumbnail_url: "/images/serengeti-safari-1-thumb.jpg",
     },
-    accommodationType: "Luxury",
-    groupSize: "Private",
-    difficulty: "Easy",
-    category: "Wildlife",
+    currency: {
+      code: "USD",
+      symbol: "$",
+    },
+    unit: {
+      name: "per person",
+    },
   },
   {
-    id: "3",
-    title: "Masai Mara Budget Safari",
-    destination: "Kenya",
-    duration: 4,
-    price: 680,
-    currency: "USD",
-    rating: 4.3,
-    reviewCount: 156,
-    images: ["https://ik.imagekit.io/54hg3nvcfg/michael-rodock-jsTYuhX5LX4-unsplash.jpg?updatedAt=1752096434113"],
-    highlights: [
-      "Game drives in Masai Mara",
-      "Camping under the stars",
-      "Masai cultural experience",
-      "All meals included",
-      "Shared transportation",
+    id: 3,
+    title: "Kilimanjaro Summit Trek",
+    slug: "kilimanjaro-summit-trek",
+    short_description:
+      "Conquer Africa's highest peak on this challenging mountain expedition",
+    description:
+      "Challenge yourself to reach the summit of Mount Kilimanjaro, Africa's highest peak at 5,895 meters. This carefully planned trek takes you through diverse ecosystems, from rainforest to alpine desert, culminating in a sunrise summit experience you'll never forget.",
+    experience_duration: "8 days",
+    display_price: "3200",
+    city: "Kilimanjaro",
+    country_code: "TZ",
+    featured: false,
+    agency_id: 3,
+    gallery: [
+      {
+        url: "/images/kilimanjaro-trek-1.jpg",
+        thumbnail_url: "/images/kilimanjaro-trek-1-thumb.jpg",
+      },
+      {
+        url: "/images/kilimanjaro-trek-2.jpg",
+        thumbnail_url: "/images/kilimanjaro-trek-2-thumb.jpg",
+      },
     ],
-    tourOperator: {
-      name: "Kenya Adventures",
-      logo: "https://ik.imagekit.io/54hg3nvcfg/Icons/Eagle%20Head%20Sideview%20Design.png?updatedAt=1752098707626",
+    first_media: {
+      url: "/images/kilimanjaro-trek-1.jpg",
+      thumbnail_url: "/images/kilimanjaro-trek-1-thumb.jpg",
     },
-    accommodationType: "Budget",
-    groupSize: "Large group",
-    difficulty: "Easy",
-    category: "Wildlife",
+    currency: {
+      code: "USD",
+      symbol: "$",
+    },
+    unit: {
+      name: "per person",
+    },
   },
   {
-    id: "4",
-    title: "Rwanda Gorillas & Golden Monkeys",
-    destination: "Rwanda",
-    duration: 6,
-    price: 2800,
-    currency: "USD",
-    rating: 4.7,
-    reviewCount: 94,
-    images: ["https://ik.imagekit.io/54hg3nvcfg/vg-bingi-wuxuh3xJKFg-unsplash.jpg?updatedAt=1752096469372"],
-    highlights: [
-      "Mountain gorilla trekking",
-      "Golden monkey tracking",
-      "Volcanoes National Park",
-      "Kigali city tour",
-      "Genocide memorial visit",
+    id: 4,
+    title: "Zanzibar Beach Paradise",
+    slug: "zanzibar-beach-paradise",
+    short_description:
+      "Relax on pristine beaches and explore the historic Stone Town",
+    description:
+      "Discover the tropical paradise of Zanzibar, where pristine white-sand beaches meet crystal-clear waters. Explore the historic Stone Town, a UNESCO World Heritage site, and immerse yourself in the island's rich culture and history.",
+    experience_duration: "7 days",
+    display_price: "1800",
+    city: "Zanzibar",
+    country_code: "TZ",
+    featured: false,
+    agency_id: 4,
+    gallery: [
+      {
+        url: "/images/zanzibar-beach-1.jpg",
+        thumbnail_url: "/images/zanzibar-beach-1-thumb.jpg",
+      },
+      {
+        url: "/images/zanzibar-beach-2.jpg",
+        thumbnail_url: "/images/zanzibar-beach-2-thumb.jpg",
+      },
     ],
-    tourOperator: {
-      name: "Rwanda Eco Tours",
-      logo: "https://ik.imagekit.io/54hg3nvcfg/Icons/C%20Letter%20Red.png?updatedAt=1752098290838",
+    first_media: {
+      url: "/images/zanzibar-beach-1.jpg",
+      thumbnail_url: "/images/zanzibar-beach-1-thumb.jpg",
     },
-    accommodationType: "Mid-range",
-    groupSize: "Small group",
-    difficulty: "Moderate",
-    category: "Gorilla trekking",
+    currency: {
+      code: "USD",
+      symbol: "$",
+    },
+    unit: {
+      name: "per person",
+    },
   },
   {
-    id: "5",
-    title: "Botswana Okavango Delta Safari",
-    destination: "Botswana",
-    duration: 8,
-    price: 4500,
-    currency: "USD",
-    rating: 4.9,
-    reviewCount: 67,
-    images: ["https://ik.imagekit.io/54hg3nvcfg/wynand-uys-4ZCA3xukIso-unsplash.jpg?updatedAt=1752096591244"],
-    highlights: [
-      "Mokoro canoe excursions",
-      "Luxury tented camps",
-      "Helicopter scenic flights",
-      "Big Five encounters",
-      "Professional guide throughout",
+    id: 5,
+    title: "Masai Mara Adventure",
+    slug: "masai-mara-adventure",
+    short_description: "Experience the best of Kenya's wildlife and culture",
+    description:
+      "Journey to the Masai Mara, Kenya's most famous wildlife reserve. This adventure combines thrilling game drives with cultural experiences, including visits to traditional Masai villages. Witness the incredible biodiversity and learn about local conservation efforts.",
+    experience_duration: "6 days",
+    display_price: "2200",
+    city: "Masai Mara",
+    country_code: "KE",
+    featured: true,
+    agency_id: 5,
+    gallery: [
+      {
+        url: "/images/masai-mara-1.jpg",
+        thumbnail_url: "/images/masai-mara-1-thumb.jpg",
+      },
+      {
+        url: "/images/masai-mara-2.jpg",
+        thumbnail_url: "/images/masai-mara-2-thumb.jpg",
+      },
     ],
-    tourOperator: {
-      name: "Okavango Specialists",
-      logo: "https://ik.imagekit.io/54hg3nvcfg/Icons/S%20Letter.png?updatedAt=1752098291250",
+    first_media: {
+      url: "/images/masai-mara-1.jpg",
+      thumbnail_url: "/images/masai-mara-1-thumb.jpg",
     },
-    accommodationType: "Luxury",
-    groupSize: "Private",
-    difficulty: "Easy",
-    category: "Wildlife",
+    currency: {
+      code: "USD",
+      symbol: "$",
+    },
+    unit: {
+      name: "per person",
+    },
   },
   {
-    id: "6",
-    title: "Cultural Heritage Tour Uganda",
-    destination: "Uganda",
-    duration: 10,
-    price: 1850,
-    currency: "USD",
-    rating: 4.5,
-    reviewCount: 73,
-    images: ["https://ik.imagekit.io/54hg3nvcfg/ransford-quaye-RCAUud6Wcmo-unsplash.jpg?updatedAt=1752096609203"],
-    highlights: [
-      "Traditional village stays",
-      "Local craft workshops",
-      "Cultural performances",
-      "Historical site visits",
-      "Community-based tourism",
+    id: 6,
+    title: "Victoria Falls Explorer",
+    slug: "victoria-falls-explorer",
+    short_description:
+      "Marvel at one of the world's most spectacular waterfalls",
+    description:
+      "Experience the awe-inspiring Victoria Falls, known locally as 'The Smoke That Thunders'. This adventure includes guided tours of the falls, thrilling activities like white-water rafting, and opportunities to spot wildlife in the surrounding national parks.",
+    experience_duration: "4 days",
+    display_price: "1600",
+    city: "Victoria Falls",
+    country_code: "ZW",
+    featured: false,
+    agency_id: 6,
+    gallery: [
+      {
+        url: "/images/victoria-falls-1.jpg",
+        thumbnail_url: "/images/victoria-falls-1-thumb.jpg",
+      },
+      {
+        url: "/images/victoria-falls-2.jpg",
+        thumbnail_url: "/images/victoria-falls-2-thumb.jpg",
+      },
     ],
-    tourOperator: {
-      name: "Cultural Safaris Uganda",
-      logo: "https://ik.imagekit.io/54hg3nvcfg/Icons/Chameleon.png?updatedAt=1752098291246",
+    first_media: {
+      url: "/images/victoria-falls-1.jpg",
+      thumbnail_url: "/images/victoria-falls-1-thumb.jpg",
     },
-    accommodationType: "Mid-range",
-    groupSize: "Small group",
-    difficulty: "Easy",
-    category: "Cultural",
+    currency: {
+      code: "USD",
+      symbol: "$",
+    },
+    unit: {
+      name: "per person",
+    },
   },
   {
-    id: "7",
-    title: "Mount Kilimanjaro Climbing Safari",
-    destination: "Tanzania",
-    duration: 12,
-    price: 3800,
-    currency: "USD",
-    rating: 4.6,
-    reviewCount: 112,
-    images: ["https://ik.imagekit.io/54hg3nvcfg/john-njoroge-PaGyC5KPm3M-unsplash.jpg?updatedAt=1752096974298"],
-    highlights: [
-      "Summit Africa's highest peak",
-      "Machame route ascent",
-      "Professional mountain guides",
-      "All equipment provided",
-      "Post-climb safari extension",
+    id: 7,
+    title: "Cape Town City & Wine Tour",
+    slug: "cape-town-city-wine-tour",
+    short_description:
+      "Discover South Africa's most beautiful city and its famous wine regions",
+    description:
+      "Explore the vibrant city of Cape Town, from the iconic Table Mountain to the historic Robben Island. Then journey to the nearby wine regions of Stellenbosch and Franschhoek for wine tastings and gourmet dining experiences.",
+    experience_duration: "5 days",
+    display_price: "1900",
+    city: "Cape Town",
+    country_code: "ZA",
+    featured: false,
+    agency_id: 7,
+    gallery: [
+      {
+        url: "/images/cape-town-1.jpg",
+        thumbnail_url: "/images/cape-town-1-thumb.jpg",
+      },
+      {
+        url: "/images/cape-town-2.jpg",
+        thumbnail_url: "/images/cape-town-2-thumb.jpg",
+      },
     ],
-    tourOperator: {
-      name: "Kilimanjaro Experts",
-      logo: "https://ik.imagekit.io/54hg3nvcfg/Icons/_Pngtree_give%20me%20random%20company%20logo_20874271.png?updatedAt=1752098292525",
+    first_media: {
+      url: "/images/cape-town-1.jpg",
+      thumbnail_url: "/images/cape-town-1-thumb.jpg",
     },
-    accommodationType: "Mid-range",
-    groupSize: "Small group",
-    difficulty: "Challenging",
-    category: "Adventure",
+    currency: {
+      code: "USD",
+      symbol: "$",
+    },
+    unit: {
+      name: "per person",
+    },
   },
   {
-    id: "8",
-    title: "South Africa Garden Route",
-    destination: "South Africa",
-    duration: 9,
-    price: 2200,
-    currency: "USD",
-    rating: 4.4,
-    reviewCount: 88,
-    images: ["https://ik.imagekit.io/54hg3nvcfg/savannah-koomen-Wbt0cD840S0-unsplash.jpg?updatedAt=1752097039446"],
-    highlights: [
-      "Cape Town to Port Elizabeth",
-      "Wine tasting experiences",
-      "Whale watching opportunities",
-      "Scenic coastal drives",
-      "Luxury accommodations",
+    id: 8,
+    title: "Namib Desert Adventure",
+    slug: "namib-desert-adventure",
+    short_description:
+      "Explore the world's oldest desert and its towering sand dunes",
+    description:
+      "Venture into the Namib Desert, home to some of the world's highest sand dunes. This adventure includes guided walks through the desert, visits to the famous Sossusvlei dunes, and opportunities to spot unique desert wildlife and plants.",
+    experience_duration: "6 days",
+    display_price: "2100",
+    city: "Namib Desert",
+    country_code: "NA",
+    featured: false,
+    agency_id: 8,
+    gallery: [
+      {
+        url: "/images/namib-desert-1.jpg",
+        thumbnail_url: "/images/namib-desert-1-thumb.jpg",
+      },
+      {
+        url: "/images/namib-desert-2.jpg",
+        thumbnail_url: "/images/namib-desert-2-thumb.jpg",
+      },
     ],
-    tourOperator: {
-      name: "South African Tours",
-      logo: "https://ik.imagekit.io/54hg3nvcfg/Icons/SVG%20Firestorm%20Flame.png?updatedAt=1752098449921",
+    first_media: {
+      url: "/images/namib-desert-1.jpg",
+      thumbnail_url: "/images/namib-desert-1-thumb.jpg",
     },
-    accommodationType: "Luxury",
-    groupSize: "Private",
-    difficulty: "Easy",
-    category: "Cultural",
+    currency: {
+      code: "USD",
+      symbol: "$",
+    },
+    unit: {
+      name: "per person",
+    },
   },
 ];
