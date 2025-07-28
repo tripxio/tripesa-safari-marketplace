@@ -9,11 +9,19 @@ import {
   useContext,
 } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { Search, Grid, List, SlidersHorizontal } from "lucide-react";
+import {
+  Search,
+  Grid,
+  List,
+  SlidersHorizontal,
+  MapPin,
+  Globe,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import FilterSidebar from "@/components/tours/FilterSidebar";
 import TourCardSkeleton from "@/components/tours/TourCardSkeleton";
+import { useLocationBasedFilters } from "@/hooks/useLocationBasedFilters";
 import type { FilterState, TourPackage } from "@/lib/types";
 
 interface ToursPageClientProps {
@@ -33,7 +41,7 @@ const ToursContext = createContext<ToursContextType | undefined>(undefined);
 export const useToursContext = () => {
   const context = useContext(ToursContext);
   if (!context) {
-    throw new Error("useToursContext must be used within ToursPageClient");
+    throw new Error("useToursContext must be used within a ToursPageClient");
   }
   return context;
 };
@@ -59,6 +67,18 @@ export default function ToursPageClient({ children }: ToursPageClientProps) {
     groupSizes: [],
     difficulty: [],
     rating: 0,
+  });
+
+  // Location-based filter preselection
+  const {
+    isDetectingLocation,
+    locationDetected,
+    userLocation,
+    clearLocationPreselection,
+    manuallyPreselectDestination,
+  } = useLocationBasedFilters({
+    initialFilters: filters,
+    onFiltersChange: setFilters,
   });
 
   // Update URL when search parameters change
@@ -109,6 +129,44 @@ export default function ToursPageClient({ children }: ToursPageClientProps) {
     <ToursContext.Provider value={contextValue}>
       <div className="min-h-screen bg-background safari-texture pt-16">
         <div className="container mx-auto px-4 py-8">
+          {/* Location Detection Status */}
+          {isDetectingLocation && (
+            <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+              <div className="flex items-center space-x-2 text-blue-700 dark:text-blue-300">
+                <Globe className="h-4 w-4 animate-spin" />
+                <span className="text-sm">
+                  Detecting your location to show relevant tours...
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/* Location-Based Filter Notification */}
+          {locationDetected &&
+            userLocation &&
+            filters.destinations.length > 0 && (
+              <div className="mb-4 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2 text-green-700 dark:text-green-300">
+                    <MapPin className="h-4 w-4" />
+                    <span className="text-sm">
+                      Showing tours in{" "}
+                      <strong>{filters.destinations[0]}</strong> based on your
+                      location ({userLocation.country})
+                    </span>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={clearLocationPreselection}
+                    className="text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-200"
+                  >
+                    Clear
+                  </Button>
+                </div>
+              </div>
+            )}
+
           <div className="mb-8">
             <div className="flex flex-col lg:flex-row gap-4 items-center justify-between mb-6">
               <div className="relative flex-1 max-w-md">
@@ -175,6 +233,8 @@ export default function ToursPageClient({ children }: ToursPageClientProps) {
               <FilterSidebar
                 filters={filters}
                 onFiltersChange={handleFiltersChange}
+                userLocation={userLocation}
+                onManualDestinationSelect={manuallyPreselectDestination}
               />
             </div>
 
