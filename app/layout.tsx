@@ -7,6 +7,8 @@ import LayoutWrapper from "@/components/layout/LayoutWrapper";
 import AnimationController from "@/components/common/AnimationController";
 import AnalyticsProvider from "@/components/common/AnalyticsProvider";
 import AuthProvider from "@/components/common/AuthProvider";
+import ServiceWorkerProvider from "@/components/common/ServiceWorkerProvider";
+import { Toaster } from "sonner";
 
 const openSans = Open_Sans({ subsets: ["latin"] });
 
@@ -45,6 +47,7 @@ export const metadata: Metadata = {
     shortcut: "/logo.png",
     apple: "/logo.png",
   },
+  manifest: "/manifest.json",
   openGraph: {
     title: "Tripesa Safari - Explore Africa's Finest Safaris",
     description:
@@ -83,6 +86,15 @@ export const metadata: Metadata = {
   verification: {
     google: "your-google-verification-code",
   },
+  other: {
+    "mobile-web-app-capable": "yes",
+    "apple-mobile-web-app-capable": "yes",
+    "apple-mobile-web-app-status-bar-style": "default",
+    "apple-mobile-web-app-title": "Tripesa Safari",
+    "application-name": "Tripesa Safari",
+    "msapplication-TileColor": "#f97316",
+    "msapplication-config": "/browserconfig.xml",
+  },
 };
 
 export default function RootLayout({
@@ -96,8 +108,24 @@ export default function RootLayout({
         <AuthProvider>
           <ThemeProvider>
             <AnalyticsProvider>
-              <LayoutWrapper>{children}</LayoutWrapper>
-              <AnimationController />
+              <ServiceWorkerProvider>
+                <LayoutWrapper>{children}</LayoutWrapper>
+                <AnimationController />
+                <Toaster
+                  position="top-right"
+                  toastOptions={{
+                    style: {
+                      background: "var(--background)",
+                      color: "var(--foreground)",
+                      border: "1px solid var(--border)",
+                      boxShadow: "0 10px 25px rgba(0, 0, 0, 0.3)",
+                      backdropFilter: "blur(8px)",
+                    },
+                    className: "font-semibold",
+                  }}
+                  theme="system"
+                />
+              </ServiceWorkerProvider>
             </AnalyticsProvider>
           </ThemeProvider>
         </AuthProvider>
