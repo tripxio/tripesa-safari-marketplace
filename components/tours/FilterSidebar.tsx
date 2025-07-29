@@ -32,7 +32,7 @@ export default function FilterSidebar({
     destinations: true,
     duration: true,
     price: true,
-    tourTypes: true,
+    // tourTypes: true, // Commented out - Tour Types filter removed
   });
 
   const toggleSection = (section: keyof typeof expandedSections) => {
@@ -70,7 +70,7 @@ export default function FilterSidebar({
     "Botswana",
     "South Africa",
   ];
-  const tourTypes = ["Wildlife", "Gorilla trekking", "Cultural", "Adventure"];
+  // const tourTypes = ["Wildlife", "Gorilla trekking", "Cultural", "Adventure"]; // Commented out - Tour Types filter removed
 
   const FilterSection = ({
     title,
@@ -222,6 +222,10 @@ export default function FilterSidebar({
         </div>
       </FilterSection>
 
+      {/* 
+      COMMENTED OUT - Tour Types filter removed based on feedback
+      May be needed in the future, so keeping the code here
+      
       <FilterSection title="Tour Types" section="tourTypes">
         <div className="space-y-3">
           {tourTypes.map((type) => (
@@ -247,6 +251,7 @@ export default function FilterSidebar({
           ))}
         </div>
       </FilterSection>
+      */}
     </div>
   );
 }
