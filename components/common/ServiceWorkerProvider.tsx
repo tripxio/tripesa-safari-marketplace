@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Wifi, WifiOff, Download, RefreshCw } from "lucide-react";
+import { Wifi, WifiOff, Download, RefreshCw, X } from "lucide-react";
 
 interface ServiceWorkerMessage {
   type: string;
@@ -18,6 +18,57 @@ export default function ServiceWorkerProvider({
   const [isOnline, setIsOnline] = useState(true);
   const [isInstallable, setIsInstallable] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [installPromptDismissed, setInstallPromptDismissed] = useState(false);
+
+  // Check if install prompt was previously dismissed
+  useEffect(() => {
+    const dismissed = localStorage.getItem("tripesa-install-dismissed");
+    const dismissedTime = localStorage.getItem(
+      "tripesa-install-dismissed-time"
+    );
+
+    if (dismissed === "true" && dismissedTime) {
+      const dismissedAt = new Date(dismissedTime);
+      const now = new Date();
+      const daysSinceDismissed =
+        (now.getTime() - dismissedAt.getTime()) / (1000 * 60 * 60 * 24);
+
+      // Show again after 7 days
+      if (daysSinceDismissed < 7) {
+        setInstallPromptDismissed(true);
+      } else {
+        // Reset after 7 days
+        localStorage.removeItem("tripesa-install-dismissed");
+        localStorage.removeItem("tripesa-install-dismissed-time");
+      }
+    }
+  }, []);
+
+  // Dismiss install prompt
+  const dismissInstallPrompt = (
+    duration: "session" | "week" | "permanent" = "week"
+  ) => {
+    setIsInstallable(false);
+    setInstallPromptDismissed(true);
+
+    if (duration === "week" || duration === "permanent") {
+      localStorage.setItem("tripesa-install-dismissed", "true");
+      localStorage.setItem(
+        "tripesa-install-dismissed-time",
+        new Date().toISOString()
+      );
+    }
+
+    toast.success("👍 Got it!", {
+      description:
+        duration === "permanent"
+          ? "Install prompt hidden permanently"
+          : duration === "week"
+          ? "Install prompt hidden for 1 week"
+          : "Install prompt hidden for this session",
+      duration: 2000,
+    });
+  };
 
   // PWA install handler - moved outside useEffect
   const handleInstallClick = async () => {
@@ -157,6 +208,12 @@ export default function ServiceWorkerProvider({
     // PWA install prompt
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
+
+      // Don't show if already dismissed
+      if (installPromptDismissed) {
+        return;
+      }
+
       setDeferredPrompt(e);
       setIsInstallable(true);
 
@@ -165,6 +222,10 @@ export default function ServiceWorkerProvider({
         action: {
           label: "Install",
           onClick: handleInstallClick,
+        },
+        cancel: {
+          label: "Not now",
+          onClick: () => dismissInstallPrompt("session"),
         },
         style: {
           background: "#1e40af", // Strong blue background
@@ -212,7 +273,7 @@ export default function ServiceWorkerProvider({
       )}
 
       {/* Install prompt */}
-      {isInstallable && (
+      {isInstallable && !installPromptDismissed && (
         <div className="fixed bottom-4 right-4 z-50">
           <button
             onClick={handleInstallClick}
@@ -220,6 +281,21 @@ export default function ServiceWorkerProvider({
           >
             <Download className="h-4 w-4" />
             <span className="text-sm font-medium">Install Safari App</span>
+          </button>
+        </div>
+      )}
+
+      {/* Dismiss button for install prompt */}
+      {isInstallable && !installPromptDismissed && (
+        <div className="fixed bottom-16 right-4 z-50">
+          <button
+            onClick={() => dismissInstallPrompt("week")}
+            className="bg-gray-200 text-gray-800 px-3 py-1.5 rounded-full text-xs font-medium hover:bg-gray-300 transition-colors flex items-center space-x-1"
+            title="Hide install prompt for 1 week"
+            aria-label="Hide install prompt for 1 week"
+          >
+            <X className="h-3 w-3" />
+            <span>Hide</span>
           </button>
         </div>
       )}
