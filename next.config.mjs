@@ -4,6 +4,16 @@ const nextConfig = {
   httpAgentOptions: {
     keepAlive: false,
   },
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'tripesaglobal.s3.amazonaws.com',
+        port: '',
+        pathname: '/**',
+      },
+    ],
+  },
   webpack: (config, { isServer }) => {
     if (!isServer) {
       // Don't bundle server-only packages on the client side

@@ -57,6 +57,9 @@ export default function ToursPageClient({ children }: ToursPageClientProps) {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [showFilters, setShowFilters] = useState(false);
   const [sortBy, setSortBy] = useState(searchParams.get("order") || "latest");
+  const [autoSelectedDestinations, setAutoSelectedDestinations] = useState<
+    string[]
+  >([]);
   const [filters, setFilters] = useState<FilterState>({
     searchQuery: searchParams.get("query") || "",
     destinations: [],
@@ -74,12 +77,27 @@ export default function ToursPageClient({ children }: ToursPageClientProps) {
     isDetectingLocation,
     locationDetected,
     userLocation,
-    clearLocationPreselection,
+    clearLocationPreselection: originalClearLocationPreselection,
     manuallyPreselectDestination,
   } = useLocationBasedFilters({
     initialFilters: filters,
-    onFiltersChange: setFilters,
+    onFiltersChange: (newFilters) => {
+      setFilters(newFilters);
+      // Track auto-selected destinations when they're applied by location detection
+      if (
+        newFilters.destinations.length > 0 &&
+        autoSelectedDestinations.length === 0
+      ) {
+        setAutoSelectedDestinations([...newFilters.destinations]);
+      }
+    },
   });
+
+  // Enhanced clear function that also clears auto-selected tracking
+  const clearLocationPreselection = () => {
+    originalClearLocationPreselection();
+    setAutoSelectedDestinations([]);
+  };
 
   // Debounced URL updates to prevent excessive API calls
   const urlUpdateTimeoutRef = useRef<any>(undefined);
@@ -146,11 +164,32 @@ export default function ToursPageClient({ children }: ToursPageClientProps) {
   // Handle filter changes
   const handleFiltersChange = useCallback(
     (newFilters: FilterState) => {
+      const prevDestinations = filters.destinations;
       setFilters(newFilters);
+
+      // Clear auto-selected tracking if destinations were manually changed
+      if (
+        JSON.stringify(newFilters.destinations) !==
+        JSON.stringify(prevDestinations)
+      ) {
+        // If destinations are now empty, clear auto-selected tracking
+        if (newFilters.destinations.length === 0) {
+          setAutoSelectedDestinations([]);
+        } else {
+          // If destinations changed but aren't empty, check if auto-selected ones are still there
+          const hasAutoSelected = autoSelectedDestinations.some((dest) =>
+            newFilters.destinations.includes(dest)
+          );
+          if (!hasAutoSelected) {
+            setAutoSelectedDestinations([]);
+          }
+        }
+      }
+
       // Update URL with search query from filters
       updateURL({ query: newFilters.searchQuery });
     },
-    [updateURL]
+    [updateURL, filters.destinations, autoSelectedDestinations]
   );
 
   // Prefetch popular tours on mount
@@ -204,30 +243,44 @@ export default function ToursPageClient({ children }: ToursPageClientProps) {
           )}
 
           {/* Location-Based Filter Notification */}
-          {locationDetected &&
-            userLocation &&
-            filters.destinations.length > 0 && (
-              <div className="mb-4 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2 text-green-700 dark:text-green-300">
-                    <MapPin className="h-4 w-4" />
-                    <span className="text-sm">
-                      Showing tours in{" "}
-                      <strong>{filters.destinations[0]}</strong> based on your
-                      location ({userLocation.country})
-                    </span>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={clearLocationPreselection}
-                    className="text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-200"
-                  >
-                    Clear
-                  </Button>
+          {locationDetected && userLocation && (
+            <div className="mb-4 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2 text-green-700 dark:text-green-300">
+                  <MapPin className="h-4 w-4" />
+                  <span className="text-sm">
+                    {filters.destinations.length > 0 ? (
+                      <>
+                        Showing tours in{" "}
+                        <strong>{filters.destinations[0]}</strong> based on your
+                        location ({userLocation.country})
+                      </>
+                    ) : (
+                      <>
+                        Location detected: {userLocation.country}.
+                        <span className="ml-1 text-green-600 dark:text-green-400">
+                          Browse all destinations or filter by your location.
+                        </span>
+                      </>
+                    )}
+                  </span>
                 </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={clearLocationPreselection}
+                  className="text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-200"
+                  title={
+                    filters.destinations.length > 0
+                      ? "Clear location filter"
+                      : "Dismiss location notification"
+                  }
+                >
+                  {filters.destinations.length > 0 ? "Clear" : "×"}
+                </Button>
               </div>
-            )}
+            </div>
+          )}
 
           <div className="mb-8">
             <div className="flex flex-col lg:flex-row gap-4 items-center justify-between mb-6">
@@ -298,6 +351,8 @@ export default function ToursPageClient({ children }: ToursPageClientProps) {
                 onFiltersChange={handleFiltersChange}
                 userLocation={userLocation}
                 onManualDestinationSelect={manuallyPreselectDestination}
+                onDestinationsCleared={clearLocationPreselection}
+                autoSelectedDestinations={autoSelectedDestinations}
               />
             </div>
 

@@ -8,7 +8,8 @@
     "lint": "next lint",
     "start": "next start",
     "create-admin": "node scripts/create-admin.js",
-    "generate-analytics": "node scripts/generate-test-analytics.js"
+    "generate-analytics": "node scripts/generate-test-analytics.js",
+    "test-offline": "node scripts/test-offline.js"
   },
   "dependencies": {
     "@getbrevo/brevo": "^2.5.0",
