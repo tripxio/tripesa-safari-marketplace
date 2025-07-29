@@ -6,6 +6,22 @@ export function filterTours(
   filters: FilterState
 ): TourPackage[] {
   return tours.filter((tour) => {
+    // Filter by search query
+    if (filters.searchQuery && filters.searchQuery.trim()) {
+      const query = filters.searchQuery.toLowerCase();
+      const searchFields = [
+        tour.title || "",
+        tour.short_description || "",
+        tour.city || "",
+      ]
+        .join(" ")
+        .toLowerCase();
+
+      if (!searchFields.includes(query)) {
+        return false;
+      }
+    }
+
     // Filter by destinations (using country codes)
     if (filters.destinations.length > 0) {
       const tourCountry = tour.country_code?.toLowerCase() || "";

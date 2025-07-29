@@ -178,13 +178,13 @@ export default function AISearchInterface({
                 className={`max-w-[80%] p-3 rounded-lg ${
                   message.type === "user"
                     ? "bg-orange-500 text-white"
-                    : "bg-muted text-foreground"
+                    : "bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-slate-700 dark:to-slate-600 text-gray-800 dark:text-white border border-blue-200 dark:border-slate-500"
                 }`}
               >
-                <div className="prose prose-sm max-w-none prose-p:my-0 prose-ul:my-0 prose-li:my-0">
+                <div className="prose prose-sm max-w-none prose-p:my-0 prose-ul:my-0 prose-li:my-0 prose-p:text-gray-800 dark:prose-p:text-white prose-ul:text-gray-800 dark:prose-ul:text-white prose-li:text-gray-800 dark:prose-li:text-white prose-strong:text-gray-900 dark:prose-strong:text-white">
                   <ReactMarkdown>{message.content}</ReactMarkdown>
                 </div>
-                <p className="text-xs opacity-70 mt-1">
+                <p className="text-xs opacity-70 mt-1 text-gray-600 dark:text-gray-300">
                   {message.timestamp.toLocaleTimeString()}
                 </p>
               </div>
@@ -193,9 +193,11 @@ export default function AISearchInterface({
 
           {isLoading && (
             <div className="flex justify-start">
-              <div className="bg-muted p-3 rounded-lg flex items-center space-x-2">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                <span>AI is thinking...</span>
+              <div className="bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-slate-700 dark:to-slate-600 text-gray-800 dark:text-white border border-blue-200 dark:border-slate-500 p-3 rounded-lg flex items-center space-x-2">
+                <Loader2 className="h-4 w-4 animate-spin text-blue-600 dark:text-blue-400" />
+                <span className="text-gray-800 dark:text-white">
+                  AI is thinking...
+                </span>
               </div>
             </div>
           )}
@@ -209,9 +211,17 @@ export default function AISearchInterface({
               placeholder="Ask about safaris, destinations, or packages..."
               value={currentQuery}
               onChange={(e) => setCurrentQuery(e.target.value)}
-              onKeyPress={(e) =>
-                e.key === "Enter" && handleSearch(currentQuery)
-              }
+              onKeyDown={(e) => {
+                if (
+                  e.key === "Enter" &&
+                  !e.shiftKey &&
+                  currentQuery.trim() &&
+                  !isLoading
+                ) {
+                  e.preventDefault();
+                  handleSearch(currentQuery);
+                }
+              }}
               disabled={isLoading}
             />
             <Button

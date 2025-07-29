@@ -2,8 +2,8 @@
 
 import type React from "react";
 
-import { useState } from "react";
-import { ChevronDown, ChevronUp, X, MapPin, Globe } from "lucide-react";
+import { useState, useEffect } from "react";
+import { ChevronDown, ChevronUp, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
@@ -32,7 +32,7 @@ export default function FilterSidebar({
     destinations: true,
     duration: true,
     price: true,
-    tourTypes: true,
+    // tourTypes: true, // Commented out - Tour Types filter removed
   });
 
   const toggleSection = (section: keyof typeof expandedSections) => {
@@ -51,6 +51,7 @@ export default function FilterSidebar({
 
   const clearAllFilters = () => {
     onFiltersChange({
+      searchQuery: "",
       destinations: [],
       duration: [1, 30],
       priceRange: [0, 10000],
@@ -70,7 +71,29 @@ export default function FilterSidebar({
     "Botswana",
     "South Africa",
   ];
-  const tourTypes = ["Wildlife", "Gorilla trekking", "Cultural", "Adventure"];
+
+  // Auto-add user's location to destinations if detected
+  useEffect(() => {
+    if (userLocation && userLocation.country) {
+      const userCountry = userLocation.country;
+      // Check if user's country matches one of our destinations and auto-select it
+      const matchingDestination = destinations.find(
+        (dest) => dest.toLowerCase() === userCountry.toLowerCase()
+      );
+
+      if (
+        matchingDestination &&
+        !filters.destinations.includes(matchingDestination)
+      ) {
+        updateFilter("destinations", [
+          ...filters.destinations,
+          matchingDestination,
+        ]);
+      }
+    }
+  }, [userLocation, filters.destinations]);
+
+  // const tourTypes = ["Wildlife", "Gorilla trekking", "Cultural", "Adventure"]; // Commented out - Tour Types filter removed
 
   const FilterSection = ({
     title,
@@ -111,48 +134,19 @@ export default function FilterSidebar({
         </Button>
       </div>
 
-      {/* Location-based quick selection */}
-      {userLocation && (
-        <Card className="mb-4">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center space-x-2 text-base">
-              <div className="w-8 h-8 rounded-lg bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center">
-                <Globe className="h-4 w-4 text-orange-600 dark:text-orange-400" />
-              </div>
-              <span>Near You</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="pt-0">
-            <div className="space-y-3">
-              <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                <MapPin className="h-3 w-3" />
-                <span>{userLocation.city || userLocation.country}</span>
-              </div>
-              {onManualDestinationSelect && (
-                <div className="space-y-2">
-                  {destinations.map((destination) => (
-                    <Button
-                      key={destination}
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => onManualDestinationSelect(destination)}
-                      className="w-full justify-start text-sm h-auto py-2 px-3 hover:bg-orange-50 dark:hover:bg-orange-900/20"
-                    >
-                      <div className="flex items-center space-x-2">
-                        <div className="w-2 h-2 rounded-full bg-orange-500"></div>
-                        <span>{destination}</span>
-                      </div>
-                    </Button>
-                  ))}
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
       <FilterSection title="Destinations" section="destinations">
         <div className="space-y-3">
+          {userLocation && (
+            <div className="mb-4 p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800">
+              <div className="text-xs text-orange-600 dark:text-orange-400 font-medium mb-1">
+                📍 Your Location
+              </div>
+              <div className="text-sm text-muted-foreground">
+                {userLocation.city ? `${userLocation.city}, ` : ""}
+                {userLocation.country}
+              </div>
+            </div>
+          )}
           {destinations.map((destination) => (
             <div key={destination} className="flex items-center space-x-2">
               <Checkbox
@@ -222,6 +216,10 @@ export default function FilterSidebar({
         </div>
       </FilterSection>
 
+      {/* 
+      COMMENTED OUT - Tour Types filter removed based on feedback
+      May be needed in the future, so keeping the code here
+      
       <FilterSection title="Tour Types" section="tourTypes">
         <div className="space-y-3">
           {tourTypes.map((type) => (
@@ -247,6 +245,7 @@ export default function FilterSidebar({
           ))}
         </div>
       </FilterSection>
+      */}
     </div>
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Star, Users, Clock, MapPin, Calendar } from "lucide-react";
+import { MapPin, Calendar } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -31,9 +31,6 @@ export default function TourCard({ tour, viewMode }: TourCardProps) {
   const tourUrl = `/tours/${tour.slug}`;
 
   // Mock data for fields not in API response
-  const rating = 4.5;
-  const reviewCount = Math.floor(Math.random() * 100);
-  const groupSize = "Small group";
   const difficulty = "Moderate";
 
   const originalDescription = tour.short_description || "";
@@ -90,18 +87,11 @@ export default function TourCard({ tour, viewMode }: TourCardProps) {
           </div>
           <CardContent className="flex-1 p-6 flex flex-col">
             <div className="flex-grow">
-              <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center mb-2">
                 <div className="flex items-center space-x-1">
                   <MapPin className="h-4 w-4 text-orange-500" />
                   <span className="text-sm text-muted-foreground">
                     {tour.city}
-                  </span>
-                </div>
-                <div className="flex items-center space-x-1">
-                  <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                  <span className="text-sm font-medium">{rating}</span>
-                  <span className="text-sm text-muted-foreground">
-                    ({reviewCount})
                   </span>
                 </div>
               </div>
@@ -112,14 +102,6 @@ export default function TourCard({ tour, viewMode }: TourCardProps) {
             </div>
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-6 mb-4 text-sm text-muted-foreground">
-                <div className="flex items-center space-x-1">
-                  <Clock className="h-4 w-4" />
-                  <span>{tour.experience_duration || "N/A"}</span>
-                </div>
-                <div className="flex items-center space-x-1">
-                  <Users className="h-4 w-4" />
-                  <span>{groupSize}</span>
-                </div>
                 <div className="flex items-center space-x-1">
                   <Calendar className="h-4 w-4" />
                   <span>{difficulty}</span>
@@ -165,32 +147,13 @@ export default function TourCard({ tour, viewMode }: TourCardProps) {
         <div className="absolute top-4 left-4">
           <Badge className="bg-orange-500 text-white">{price}</Badge>
         </div>
-        <div className="absolute bottom-4 left-4 right-4 text-white">
-          <div className="flex items-center space-x-4 text-sm mb-2">
-            <div className="flex items-center space-x-1">
-              <Clock className="h-4 w-4" />
-              <span>{tour.experience_duration || "N/A"}</span>
-            </div>
-            <div className="flex items-center space-x-1">
-              <Users className="h-4 w-4" />
-              <span>{groupSize}</span>
-            </div>
-          </div>
-        </div>
       </div>
       <CardContent className="p-6 flex flex-col flex-grow">
         <div className="flex-grow">
-          <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center mb-2">
             <div className="flex items-center space-x-1">
               <MapPin className="h-4 w-4 text-orange-500" />
               <span className="text-sm text-muted-foreground">{tour.city}</span>
-            </div>
-            <div className="flex items-center space-x-1">
-              <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-              <span className="text-sm font-medium">{rating}</span>
-              <span className="text-sm text-muted-foreground">
-                ({reviewCount})
-              </span>
             </div>
           </div>
           <h3 className="text-xl font-bold mb-3 group-hover:text-orange-500 transition-colors">
