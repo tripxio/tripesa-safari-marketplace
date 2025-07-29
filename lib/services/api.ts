@@ -1,4 +1,10 @@
-import type { ApiResponse, Agency, TourPackage } from "@/lib/types";
+import type {
+  ApiResponse,
+  Agency,
+  TourPackage,
+  InquiryRequest,
+  InquiryResponse,
+} from "@/lib/types";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
@@ -188,6 +194,30 @@ export const getTour = async (slug: string): Promise<{ data: TourPackage }> => {
   setMemoryCache(cacheKey, data, 1800000);
 
   return data;
+};
+
+// Inquiry API
+export const submitInquiry = async (
+  agencySlug: string,
+  inquiryData: InquiryRequest
+): Promise<InquiryResponse> => {
+  // Use the base URL without /search for agency endpoints
+  const baseUrl =
+    process.env.NEXT_PUBLIC_API_BASE_URL?.replace("/api/search", "/api");
+
+  const response = await fetch(`${baseUrl}/agency/${agencySlug}/inquiry`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(inquiryData),
+  });
+
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+
+  return response.json();
 };
 
 // Cache cleanup utility - call periodically to prevent memory leaks

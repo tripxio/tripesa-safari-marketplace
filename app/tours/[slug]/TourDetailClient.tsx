@@ -22,6 +22,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import type { TourPackage } from "@/lib/types";
+import InquiryModal from "@/components/tours/InquiryModal";
 
 interface TourDetailClientProps {
   tour: TourPackage;
@@ -29,6 +30,7 @@ interface TourDetailClientProps {
 
 export default function TourDetailClient({ tour }: TourDetailClientProps) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [isInquiryModalOpen, setIsInquiryModalOpen] = useState(false);
   // const [isWishlisted, setIsWishlisted] = useState(false); // Commented out for future use
 
   const images =
@@ -60,8 +62,7 @@ export default function TourDetailClient({ tour }: TourDetailClientProps) {
   };
 
   const handleInquire = () => {
-    // Add inquiry logic here
-    console.log("Inquire clicked for tour:", tour.slug);
+    setIsInquiryModalOpen(true);
   };
 
   const handleShare = async () => {
@@ -88,6 +89,11 @@ export default function TourDetailClient({ tour }: TourDetailClientProps) {
   //   setIsWishlisted(!isWishlisted);
   //   // Add wishlist logic here
   // };
+
+  // Generate agency slug from agency_id (temporary solution)
+  const agencySlug = tour.agency_id
+    ? `agency-${tour.agency_id}`
+    : "default-agency";
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -536,6 +542,14 @@ export default function TourDetailClient({ tour }: TourDetailClientProps) {
           </div>
         </div>
       </div>
+
+      {/* Inquiry Modal */}
+      <InquiryModal
+        isOpen={isInquiryModalOpen}
+        onClose={() => setIsInquiryModalOpen(false)}
+        tour={tour}
+        agencySlug={agencySlug}
+      />
     </div>
   );
 }
