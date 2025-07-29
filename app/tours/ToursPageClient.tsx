@@ -34,8 +34,10 @@ interface ToursPageClientProps {
 interface ToursContextType {
   filters: FilterState;
   sortBy: string;
+  viewMode: "grid" | "list";
   setFilters: (filters: FilterState) => void;
   setSortBy: (sortBy: string) => void;
+  setViewMode: (viewMode: "grid" | "list") => void;
 }
 
 const ToursContext = createContext<ToursContextType | undefined>(undefined);
@@ -179,8 +181,10 @@ export default function ToursPageClient({ children }: ToursPageClientProps) {
   const contextValue = {
     filters,
     sortBy,
+    viewMode,
     setFilters: handleFiltersChange,
     setSortBy: handleSortChange,
+    setViewMode,
   };
 
   return (

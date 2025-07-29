@@ -33,25 +33,14 @@ export default async function ToursPage({ searchParams }: ToursPageProps) {
 
   const suspenseKey = `${query}-${category}-${order}-${params.location}-${page}`;
 
-  // This is a placeholder for viewMode. In a real app, you might get this
-  // from searchParams as well, but that would require client-side navigation
-  // to update the URL. For now, we'll keep it simple.
-  const viewMode = "grid";
-
   return (
     <ToursPageClient>
       <Suspense
         key={suspenseKey}
         fallback={
-          <div
-            className={`grid ${
-              viewMode === "grid"
-                ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
-                : "grid-cols-1 gap-6"
-            }`}
-          >
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {Array.from({ length: 6 }).map((_, index) => (
-              <TourCardSkeleton key={index} viewMode={viewMode} />
+              <TourCardSkeleton key={index} viewMode="grid" />
             ))}
           </div>
         }
@@ -62,7 +51,6 @@ export default async function ToursPage({ searchParams }: ToursPageProps) {
           order={order}
           location={location}
           page={page}
-          viewMode={viewMode}
         />
       </Suspense>
       {/* Pagination will be handled in a future step */}

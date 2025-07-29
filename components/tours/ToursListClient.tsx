@@ -9,7 +9,6 @@ import type { TourPackage, FilterState } from "@/lib/types";
 
 interface ToursListClientProps {
   tours: TourPackage[];
-  viewMode: "grid" | "list";
   paginationMeta?: {
     last_page: number;
     current_page: number;
@@ -66,10 +65,9 @@ const setCachedResult = (key: string, result: TourPackage[]) => {
 
 export default function ToursListClient({
   tours,
-  viewMode,
   paginationMeta,
 }: ToursListClientProps) {
-  const { filters, sortBy } = useToursContext();
+  const { filters, sortBy, viewMode } = useToursContext();
   const lastProcessedRef = useRef<{
     tours: TourPackage[];
     filters: FilterState;
@@ -156,12 +154,60 @@ export default function ToursListClient({
     );
   }, [paginationMeta?.last_page, paginationMeta?.current_page]);
 
+  // Memoize the results count display
+  const resultsCountDisplay = useMemo(() => {
+    const count = filteredAndSortedTours.length;
+    const hasActiveFilters =
+      filters.searchQuery ||
+      filters.destinations.length > 0 ||
+      filters.duration[0] !== 1 ||
+      filters.duration[1] !== 30 ||
+      filters.priceRange[0] !== 0 ||
+      filters.priceRange[1] !== 10000 ||
+      filters.tourTypes.length > 0;
+
+    return (
+      <div className="bg-gradient-to-r from-orange-50 to-amber-50 dark:from-slate-800 dark:to-slate-700 rounded-lg p-4 mb-6 border border-orange-100 dark:border-slate-600">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-3">
+              <div className="bg-orange-500 text-white px-3 py-1 rounded-full text-sm font-medium">
+                {count.toLocaleString()}
+              </div>
+              <div>
+                <div className="text-lg font-semibold text-gray-900 dark:text-white">
+                  {count === 1 ? "Tour Package" : "Tour Packages"}
+                  {hasActiveFilters ? " Found" : " Available"}
+                </div>
+                <div className="text-sm text-gray-600 dark:text-gray-300">
+                  {hasActiveFilters
+                    ? "Showing filtered results"
+                    : "Browse all available tours"}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {hasActiveFilters && (
+            <div className="flex items-center space-x-2 bg-orange-100 dark:bg-orange-900/30 px-3 py-2 rounded-full">
+              <div className="w-2 h-2 rounded-full bg-orange-500 animate-pulse"></div>
+              <span className="text-sm font-medium text-orange-700 dark:text-orange-300">
+                Filtered
+              </span>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }, [filteredAndSortedTours.length, filters]);
+
   if (filteredAndSortedTours.length === 0) {
     return emptyState;
   }
 
   return (
     <div>
+      {resultsCountDisplay}
       <TourGridClient tours={filteredAndSortedTours} viewMode={viewMode} />
       {paginationComponent}
     </div>

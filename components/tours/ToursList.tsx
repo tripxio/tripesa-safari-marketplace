@@ -8,7 +8,6 @@ interface ToursListProps {
   order: string | null;
   location: { lat: number; lng: number } | null;
   page: number;
-  viewMode: "grid" | "list";
 }
 
 export default async function ToursList({
@@ -17,7 +16,6 @@ export default async function ToursList({
   order,
   location,
   page,
-  viewMode,
 }: ToursListProps) {
   try {
     // Prepare filters for API call
@@ -31,13 +29,7 @@ export default async function ToursList({
     const tours: TourPackage[] = response.data || [];
     const paginationMeta = response.meta;
 
-    return (
-      <ToursListClient
-        tours={tours}
-        viewMode={viewMode}
-        paginationMeta={paginationMeta}
-      />
-    );
+    return <ToursListClient tours={tours} paginationMeta={paginationMeta} />;
   } catch (error) {
     console.error("Error fetching tours:", error);
     return (
