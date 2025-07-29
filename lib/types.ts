@@ -60,6 +60,7 @@ export interface ApiResponse {
 }
 
 export interface FilterState {
+  searchQuery: string;
   destinations: string[];
   duration: [number, number];
   priceRange: [number, number];

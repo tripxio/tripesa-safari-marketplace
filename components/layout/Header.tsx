@@ -4,9 +4,8 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { Search, User, Menu, X } from "lucide-react";
+import { User, Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import ThemeToggle from "@/components/common/ThemeToggle";
 
 export default function Header() {
@@ -82,10 +81,6 @@ export default function Header() {
 
           {/* Desktop Actions */}
           <div className="hidden md:flex items-center space-x-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-              <Input placeholder="Search..." className="pl-10 w-64" />
-            </div>
             <Button variant="ghost" size="icon">
               <User
                 className={`h-5 w-5 ${

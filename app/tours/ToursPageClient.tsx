@@ -7,6 +7,8 @@ import {
   useEffect,
   createContext,
   useContext,
+  useRef,
+  useCallback,
 } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import {
@@ -52,13 +54,9 @@ export default function ToursPageClient({ children }: ToursPageClientProps) {
 
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [showFilters, setShowFilters] = useState(false);
-  const [searchQuery, setSearchQuery] = useState(
-    searchParams.get("query") || ""
-  );
-  const [sortBy, setSortBy] = useState(
-    searchParams.get("order") || "popularity"
-  );
+  const [sortBy, setSortBy] = useState(searchParams.get("order") || "latest");
   const [filters, setFilters] = useState<FilterState>({
+    searchQuery: searchParams.get("query") || "",
     destinations: [],
     duration: [1, 30],
     priceRange: [0, 10000],
@@ -81,42 +79,102 @@ export default function ToursPageClient({ children }: ToursPageClientProps) {
     onFiltersChange: setFilters,
   });
 
-  // Update URL when search parameters change
-  const updateURL = (newParams: Record<string, string>) => {
-    const params = new URLSearchParams(searchParams.toString());
+  // Debounced URL updates to prevent excessive API calls
+  const urlUpdateTimeoutRef = useRef<any>(undefined);
 
-    Object.entries(newParams).forEach(([key, value]) => {
-      if (value) {
-        params.set(key, value);
-      } else {
-        params.delete(key);
+  // Update URL when search parameters change (debounced)
+  const updateURL = useCallback(
+    (newParams: Record<string, string>) => {
+      // Clear existing timeout
+      if (urlUpdateTimeoutRef.current) {
+        clearTimeout(urlUpdateTimeoutRef.current);
       }
-    });
 
-    // Reset to page 1 when filters change
-    params.set("page", "1");
+      // Debounce URL updates to prevent rapid API calls
+      urlUpdateTimeoutRef.current = setTimeout(() => {
+        const params = new URLSearchParams(searchParams.toString());
 
-    router.push(`?${params.toString()}`);
-  };
+        Object.entries(newParams).forEach(([key, value]) => {
+          if (value) {
+            params.set(key, value);
+          } else {
+            params.delete(key);
+          }
+        });
 
-  // Handle search query changes
-  const handleSearchChange = (query: string) => {
-    setSearchQuery(query);
-    updateURL({ query });
-  };
+        // Reset to page 1 when filters change
+        params.set("page", "1");
+
+        router.push(`?${params.toString()}`);
+      }, 300); // 300ms debounce
+    },
+    [router, searchParams]
+  );
+
+  // Handle search query changes (debounced)
+  const searchTimeoutRef = useRef<any>(undefined);
+  const handleSearchChange = useCallback(
+    (query: string) => {
+      setFilters((prev) => ({
+        ...prev,
+        searchQuery: query,
+      }));
+
+      // Debounce search to prevent API spam
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+
+      searchTimeoutRef.current = setTimeout(() => {
+        updateURL({ query });
+      }, 500); // 500ms debounce for search
+    },
+    [updateURL]
+  );
 
   // Handle sort changes
-  const handleSortChange = (order: string) => {
-    setSortBy(order);
-    updateURL({ order });
-  };
+  const handleSortChange = useCallback(
+    (order: string) => {
+      setSortBy(order);
+      updateURL({ order });
+    },
+    [updateURL]
+  );
 
   // Handle filter changes
-  const handleFiltersChange = (newFilters: FilterState) => {
-    setFilters(newFilters);
-    // For now, we'll implement frontend filtering as fallback
-    // In the future, you could add more API parameters for these filters
-  };
+  const handleFiltersChange = useCallback(
+    (newFilters: FilterState) => {
+      setFilters(newFilters);
+      // Update URL with search query from filters
+      updateURL({ query: newFilters.searchQuery });
+    },
+    [updateURL]
+  );
+
+  // Prefetch popular tours on mount
+  useEffect(() => {
+    const prefetchData = async () => {
+      // Import the prefetch function dynamically to avoid SSR issues
+      const { prefetchPopularTours } = await import("@/lib/services/api");
+      prefetchPopularTours();
+    };
+
+    // Prefetch after a short delay to not block initial render
+    const timer = setTimeout(prefetchData, 1000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Cleanup timeouts on unmount
+  useEffect(() => {
+    return () => {
+      if (urlUpdateTimeoutRef.current) {
+        clearTimeout(urlUpdateTimeoutRef.current);
+      }
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const contextValue = {
     filters,
@@ -173,7 +231,7 @@ export default function ToursPageClient({ children }: ToursPageClientProps) {
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                 <Input
                   placeholder="Search safaris, destinations..."
-                  value={searchQuery}
+                  value={filters.searchQuery}
                   onChange={(e) => handleSearchChange(e.target.value)}
                   className="pl-10"
                 />
@@ -189,36 +247,37 @@ export default function ToursPageClient({ children }: ToursPageClientProps) {
                   Filters
                 </Button>
 
-                <select
-                  value={sortBy}
-                  onChange={(e) => handleSortChange(e.target.value)}
-                  className="px-3 py-2 border rounded-md bg-background"
-                  aria-label="Sort tours by"
-                >
-                  <option value="popularity">Sort by Popularity</option>
-                  <option value="price_asc">Price: Low to High</option>
-                  <option value="price_desc">Price: High to Low</option>
-                  <option value="name_asc">Name: A to Z</option>
-                  <option value="name_desc">Name: Z to A</option>
-                  <option value="latest">Latest</option>
-                  <option value="oldest">Oldest</option>
-                </select>
+                <div className="flex items-center gap-3">
+                  <select
+                    value={sortBy}
+                    onChange={(e) => handleSortChange(e.target.value)}
+                    className="px-3 py-2 border rounded-md bg-background"
+                    aria-label="Sort tours by"
+                  >
+                    <option value="latest">Latest</option>
+                    <option value="oldest">Oldest</option>
+                    <option value="price_asc">Price: Low to High</option>
+                    <option value="price_desc">Price: High to Low</option>
+                    <option value="name_asc">Name: A to Z</option>
+                    <option value="name_desc">Name: Z to A</option>
+                  </select>
 
-                <div className="flex border rounded-md">
-                  <Button
-                    variant={viewMode === "grid" ? "default" : "ghost"}
-                    size="sm"
-                    onClick={() => setViewMode("grid")}
-                  >
-                    <Grid className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant={viewMode === "list" ? "default" : "ghost"}
-                    size="sm"
-                    onClick={() => setViewMode("list")}
-                  >
-                    <List className="h-4 w-4" />
-                  </Button>
+                  <div className="flex border rounded-md">
+                    <Button
+                      variant={viewMode === "grid" ? "default" : "ghost"}
+                      size="sm"
+                      onClick={() => setViewMode("grid")}
+                    >
+                      <Grid className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant={viewMode === "list" ? "default" : "ghost"}
+                      size="sm"
+                      onClick={() => setViewMode("list")}
+                    >
+                      <List className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               </div>
             </div>

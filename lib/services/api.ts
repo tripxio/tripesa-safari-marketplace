@@ -19,10 +19,47 @@ interface TourFilters {
   page?: number;
 }
 
+// In-memory cache for frequently accessed data
+const memoryCache = new Map<
+  string,
+  { data: any; timestamp: number; ttl: number }
+>();
+
+// Cache utility functions
+const getCacheKey = (prefix: string, params: any): string => {
+  return `${prefix}_${JSON.stringify(params)}`;
+};
+
+const isValidCache = (cacheEntry: { timestamp: number; ttl: number }) => {
+  return Date.now() - cacheEntry.timestamp < cacheEntry.ttl;
+};
+
+const setMemoryCache = (key: string, data: any, ttlMs: number) => {
+  memoryCache.set(key, { data, timestamp: Date.now(), ttl: ttlMs });
+};
+
+const getMemoryCache = (key: string) => {
+  const cached = memoryCache.get(key);
+  if (cached && isValidCache(cached)) {
+    return cached.data;
+  }
+  memoryCache.delete(key);
+  return null;
+};
+
 export const getTours = async (
   filters: TourFilters = {},
   page: number = 1
 ): Promise<ApiResponse> => {
+  // Create cache key for this specific request
+  const cacheKey = getCacheKey("tours", { ...filters, page });
+
+  // Check memory cache first (5 minutes for tours data)
+  const cachedData = getMemoryCache(cacheKey);
+  if (cachedData) {
+    return cachedData;
+  }
+
   const params = new URLSearchParams();
 
   // Add query parameter for text search
@@ -49,30 +86,105 @@ export const getTours = async (
   // Add page parameter
   params.append("page", page.toString());
 
+  // Dynamic cache timing based on request type
+  let revalidateTime = 1800; // 30 minutes default
+
+  // More aggressive caching for static-like requests
+  if (!filters.query && !filters.location && page === 1) {
+    revalidateTime = 3600; // 1 hour for landing page data
+  }
+
+  // Shorter cache for search results (more dynamic)
+  if (filters.query) {
+    revalidateTime = 900; // 15 minutes for search results
+  }
+
   const response = await fetch(`${API_BASE_URL}/tours?${params.toString()}`, {
-    next: { revalidate: 3600 }, // Cache for 1 hour
+    next: {
+      revalidate: revalidateTime,
+      tags: [
+        "tours",
+        `tours-page-${page}`,
+        filters.category ? `category-${filters.category}` : "all-categories",
+      ],
+    },
+    headers: {
+      "Cache-Control": `s-maxage=${revalidateTime}, stale-while-revalidate=60`,
+    },
   });
 
   if (!response.ok) {
-    // You might want to handle errors more gracefully
     throw new Error("Failed to fetch tours");
   }
 
-  return response.json();
+  const data = await response.json();
+
+  // Cache in memory for quick subsequent access
+  setMemoryCache(cacheKey, data, 300000); // 5 minutes in memory
+
+  return data;
 };
 
 export const getAgency = async (
   agencyId: number
 ): Promise<{ data: Agency }> => {
+  const cacheKey = getCacheKey("agency", { agencyId });
+
+  // Check memory cache first (longer cache for agency data - 15 minutes)
+  const cachedData = getMemoryCache(cacheKey);
+  if (cachedData) {
+    return cachedData;
+  }
+
   const response = await fetch(`${API_BASE_URL}/agencies/${agencyId}/show`, {
-    next: { revalidate: 3600 }, // Cache for 1 hour
+    next: {
+      revalidate: 7200, // 2 hours for agency data (changes less frequently)
+      tags: ["agencies", `agency-${agencyId}`],
+    },
+    headers: {
+      "Cache-Control": "s-maxage=7200, stale-while-revalidate=120",
+    },
   });
 
   if (!response.ok) {
     throw new Error("Failed to fetch agency");
   }
 
-  return response.json();
+  const data = await response.json();
+
+  // Cache in memory for 15 minutes
+  setMemoryCache(cacheKey, data, 900000);
+
+  return data;
 };
 
-// You can add other API functions here, e.g., getTourById, getRooms, etc.
+// Cache cleanup utility - call periodically to prevent memory leaks
+export const cleanupCache = () => {
+  const now = Date.now();
+  for (const [key, value] of memoryCache.entries()) {
+    if (!isValidCache(value)) {
+      memoryCache.delete(key);
+    }
+  }
+};
+
+// Prefetch popular data
+export const prefetchPopularTours = async () => {
+  try {
+    // Prefetch first page with no filters (most common request)
+    await getTours({}, 1);
+
+    // Prefetch common categories if you have them
+    const popularCategories = ["wildlife", "adventure", "cultural"];
+    popularCategories.forEach(async (category) => {
+      await getTours({ category }, 1);
+    });
+  } catch (error) {
+    console.warn("Prefetch failed:", error);
+  }
+};
+
+// Run cleanup every 10 minutes
+if (typeof window !== "undefined") {
+  setInterval(cleanupCache, 600000);
+}
