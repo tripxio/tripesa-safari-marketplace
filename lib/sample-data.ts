@@ -19,22 +19,29 @@ export const sampleTours: TourPackage[] = [
       {
         url: "/images/gorilla-trekking-1.jpg",
         thumbnail_url: "/images/gorilla-trekking-1-thumb.jpg",
+        name: "Mountain Gorilla Family",
       },
       {
         url: "/images/gorilla-trekking-2.jpg",
         thumbnail_url: "/images/gorilla-trekking-2-thumb.jpg",
+        name: "Bwindi Forest Trek",
       },
     ],
     first_media: {
       url: "/images/gorilla-trekking-1.jpg",
       thumbnail_url: "/images/gorilla-trekking-1-thumb.jpg",
+      name: "Mountain Gorilla Family",
     },
     currency: {
+      id: 1,
+      name: "US Dollar",
       code: "USD",
       symbol: "$",
     },
     unit: {
+      id: 1,
       name: "per person",
+      description: "Pricing is per person",
     },
   },
   {
@@ -55,22 +62,29 @@ export const sampleTours: TourPackage[] = [
       {
         url: "/images/serengeti-safari-1.jpg",
         thumbnail_url: "/images/serengeti-safari-1-thumb.jpg",
+        name: "Serengeti Migration",
       },
       {
         url: "/images/serengeti-safari-2.jpg",
         thumbnail_url: "/images/serengeti-safari-2-thumb.jpg",
+        name: "African Wildlife",
       },
     ],
     first_media: {
       url: "/images/serengeti-safari-1.jpg",
       thumbnail_url: "/images/serengeti-safari-1-thumb.jpg",
+      name: "Serengeti Migration",
     },
     currency: {
+      id: 1,
+      name: "US Dollar",
       code: "USD",
       symbol: "$",
     },
     unit: {
+      id: 1,
       name: "per person",
+      description: "Pricing is per person",
     },
   },
   {
@@ -91,22 +105,29 @@ export const sampleTours: TourPackage[] = [
       {
         url: "/images/kilimanjaro-trek-1.jpg",
         thumbnail_url: "/images/kilimanjaro-trek-1-thumb.jpg",
+        name: "Kilimanjaro Summit",
       },
       {
         url: "/images/kilimanjaro-trek-2.jpg",
         thumbnail_url: "/images/kilimanjaro-trek-2-thumb.jpg",
+        name: "Mountain Trek Route",
       },
     ],
     first_media: {
       url: "/images/kilimanjaro-trek-1.jpg",
       thumbnail_url: "/images/kilimanjaro-trek-1-thumb.jpg",
+      name: "Kilimanjaro Summit",
     },
     currency: {
+      id: 1,
+      name: "US Dollar",
       code: "USD",
       symbol: "$",
     },
     unit: {
+      id: 1,
       name: "per person",
+      description: "Pricing is per person",
     },
   },
   {
@@ -127,22 +148,29 @@ export const sampleTours: TourPackage[] = [
       {
         url: "/images/zanzibar-beach-1.jpg",
         thumbnail_url: "/images/zanzibar-beach-1-thumb.jpg",
+        name: "Zanzibar Beach Paradise",
       },
       {
         url: "/images/zanzibar-beach-2.jpg",
         thumbnail_url: "/images/zanzibar-beach-2-thumb.jpg",
+        name: "Stone Town Historic",
       },
     ],
     first_media: {
       url: "/images/zanzibar-beach-1.jpg",
       thumbnail_url: "/images/zanzibar-beach-1-thumb.jpg",
+      name: "Zanzibar Beach Paradise",
     },
     currency: {
+      id: 1,
+      name: "US Dollar",
       code: "USD",
       symbol: "$",
     },
     unit: {
+      id: 1,
       name: "per person",
+      description: "Pricing is per person",
     },
   },
   {
@@ -162,22 +190,29 @@ export const sampleTours: TourPackage[] = [
       {
         url: "/images/masai-mara-1.jpg",
         thumbnail_url: "/images/masai-mara-1-thumb.jpg",
+        name: "Masai Mara Wildlife",
       },
       {
         url: "/images/masai-mara-2.jpg",
         thumbnail_url: "/images/masai-mara-2-thumb.jpg",
+        name: "Masai Cultural Village",
       },
     ],
     first_media: {
       url: "/images/masai-mara-1.jpg",
       thumbnail_url: "/images/masai-mara-1-thumb.jpg",
+      name: "Masai Mara Wildlife",
     },
     currency: {
+      id: 1,
+      name: "US Dollar",
       code: "USD",
       symbol: "$",
     },
     unit: {
+      id: 1,
       name: "per person",
+      description: "Pricing is per person",
     },
   },
   {
@@ -198,22 +233,29 @@ export const sampleTours: TourPackage[] = [
       {
         url: "/images/victoria-falls-1.jpg",
         thumbnail_url: "/images/victoria-falls-1-thumb.jpg",
+        name: "Victoria Falls Waterfall",
       },
       {
         url: "/images/victoria-falls-2.jpg",
         thumbnail_url: "/images/victoria-falls-2-thumb.jpg",
+        name: "White Water Rafting",
       },
     ],
     first_media: {
       url: "/images/victoria-falls-1.jpg",
       thumbnail_url: "/images/victoria-falls-1-thumb.jpg",
+      name: "Victoria Falls Waterfall",
     },
     currency: {
+      id: 1,
+      name: "US Dollar",
       code: "USD",
       symbol: "$",
     },
     unit: {
+      id: 1,
       name: "per person",
+      description: "Pricing is per person",
     },
   },
   {
@@ -234,22 +276,29 @@ export const sampleTours: TourPackage[] = [
       {
         url: "/images/cape-town-1.jpg",
         thumbnail_url: "/images/cape-town-1-thumb.jpg",
+        name: "Table Mountain View",
       },
       {
         url: "/images/cape-town-2.jpg",
         thumbnail_url: "/images/cape-town-2-thumb.jpg",
+        name: "Wine Country Vineyards",
       },
     ],
     first_media: {
       url: "/images/cape-town-1.jpg",
       thumbnail_url: "/images/cape-town-1-thumb.jpg",
+      name: "Table Mountain View",
     },
     currency: {
+      id: 1,
+      name: "US Dollar",
       code: "USD",
       symbol: "$",
     },
     unit: {
+      id: 1,
       name: "per person",
+      description: "Pricing is per person",
     },
   },
   {
@@ -270,22 +319,29 @@ export const sampleTours: TourPackage[] = [
       {
         url: "/images/namib-desert-1.jpg",
         thumbnail_url: "/images/namib-desert-1-thumb.jpg",
+        name: "Sossusvlei Sand Dunes",
       },
       {
         url: "/images/namib-desert-2.jpg",
         thumbnail_url: "/images/namib-desert-2-thumb.jpg",
+        name: "Desert Wildlife",
       },
     ],
     first_media: {
       url: "/images/namib-desert-1.jpg",
       thumbnail_url: "/images/namib-desert-1-thumb.jpg",
+      name: "Sossusvlei Sand Dunes",
     },
     currency: {
+      id: 1,
+      name: "US Dollar",
       code: "USD",
       symbol: "$",
     },
     unit: {
+      id: 1,
       name: "per person",
+      description: "Pricing is per person",
     },
   },
 ];
