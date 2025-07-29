@@ -116,3 +116,21 @@ export interface FilterState {
   difficulty: string[];
   rating: number;
 }
+
+// Inquiry types
+export interface InquiryRequest {
+  id: number;
+  type: "package";
+  phone_number: string;
+  full_name: string;
+  email_address: string;
+  no_of_people: number;
+  inquiry_date: string;
+  message?: string;
+}
+
+export interface InquiryResponse {
+  success: boolean;
+  message: string;
+  data?: any;
+}
