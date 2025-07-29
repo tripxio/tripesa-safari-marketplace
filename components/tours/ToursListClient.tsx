@@ -12,6 +12,9 @@ interface ToursListClientProps {
   paginationMeta?: {
     last_page: number;
     current_page: number;
+    total: number;
+    from: number;
+    to: number;
   };
 }
 
@@ -156,7 +159,6 @@ export default function ToursListClient({
 
   // Memoize the results count display
   const resultsCountDisplay = useMemo(() => {
-    const count = filteredAndSortedTours.length;
     const hasActiveFilters =
       filters.searchQuery ||
       filters.destinations.length > 0 ||
@@ -166,8 +168,16 @@ export default function ToursListClient({
       filters.priceRange[1] !== 10000 ||
       filters.tourTypes.length > 0;
 
+    // Use filtered count when filters are active, total count when no filters
+    const count = hasActiveFilters
+      ? filteredAndSortedTours.length
+      : paginationMeta?.total ?? filteredAndSortedTours.length;
+
     return (
-      <div className="bg-gradient-to-r from-orange-50 to-amber-50 dark:from-slate-800 dark:to-slate-700 rounded-lg p-4 mb-6 border border-orange-100 dark:border-slate-600">
+      <div
+        key={`count-${hasActiveFilters}-${filteredAndSortedTours.length}-${paginationMeta?.total}`}
+        className="bg-gradient-to-r from-orange-50 to-amber-50 dark:from-slate-800 dark:to-slate-700 rounded-lg p-4 mb-6 border border-orange-100 dark:border-slate-600"
+      >
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-3">
@@ -183,6 +193,16 @@ export default function ToursListClient({
                   {hasActiveFilters
                     ? "Showing filtered results"
                     : "Browse all available tours"}
+                  {!hasActiveFilters &&
+                    paginationMeta &&
+                    paginationMeta.total > filteredAndSortedTours.length && (
+                      <div className="mt-1">
+                        Showing {paginationMeta.from}-{paginationMeta.to} of{" "}
+                        {paginationMeta.total.toLocaleString()}
+                        (Page {paginationMeta.current_page} of{" "}
+                        {paginationMeta.last_page})
+                      </div>
+                    )}
                 </div>
               </div>
             </div>
@@ -199,7 +219,15 @@ export default function ToursListClient({
         </div>
       </div>
     );
-  }, [filteredAndSortedTours.length, filters]);
+  }, [
+    paginationMeta?.total,
+    filteredAndSortedTours.length,
+    filters.searchQuery,
+    filters.destinations,
+    filters.duration,
+    filters.priceRange,
+    filters.tourTypes,
+  ]);
 
   if (filteredAndSortedTours.length === 0) {
     return emptyState;

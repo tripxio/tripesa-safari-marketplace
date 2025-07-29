@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { locationService } from "@/lib/services/locationService";
 import type { FilterState } from "@/lib/types";
 
@@ -19,13 +19,24 @@ export function useLocationBasedFilters({
     city?: string;
   } | null>(null);
 
+  // Use ref to track if location detection has been attempted to prevent re-runs
+  const hasAttemptedDetection = useRef(false);
+  // Track if user has manually cleared destinations
+  const userHasClearedDestinations = useRef(false);
+
   useEffect(() => {
     const detectAndPreselectFilters = async () => {
-      // Skip if we've already detected location or if filters are already set
-      if (locationDetected || initialFilters.destinations.length > 0) {
+      // Skip if we've already attempted detection, if filters are already set, or if user has manually cleared
+      if (
+        hasAttemptedDetection.current ||
+        initialFilters.destinations.length > 0 ||
+        userHasClearedDestinations.current
+      ) {
         return;
       }
 
+      // Mark that we've attempted detection
+      hasAttemptedDetection.current = true;
       setIsDetectingLocation(true);
 
       try {
@@ -79,19 +90,30 @@ export function useLocationBasedFilters({
     const timer = setTimeout(detectAndPreselectFilters, 1000);
 
     return () => clearTimeout(timer);
-  }, [initialFilters, onFiltersChange, locationDetected]);
+  }, []); // Remove dependencies to prevent re-runs
 
   const clearLocationPreselection = () => {
+    // Mark that user has manually cleared destinations
+    userHasClearedDestinations.current = true;
+
+    // Reset to the initial filter state with empty destinations
     const updatedFilters = {
       ...initialFilters,
       destinations: [],
     };
     onFiltersChange(updatedFilters);
+
+    // Reset location detection state so notification can be dismissed
     setLocationDetected(false);
     setUserLocation(null);
+    // Reset the attempted detection flag so location can be detected again if needed
+    hasAttemptedDetection.current = false;
   };
 
   const manuallyPreselectDestination = (destination: string) => {
+    // Reset the cleared flag since user is now manually selecting
+    userHasClearedDestinations.current = false;
+
     const updatedFilters = {
       ...initialFilters,
       destinations: [destination],

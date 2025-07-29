@@ -20,6 +20,8 @@ interface FilterSidebarProps {
     city?: string;
   } | null;
   onManualDestinationSelect?: (destination: string) => void;
+  onDestinationsCleared?: () => void;
+  autoSelectedDestinations?: string[]; // Track which destinations were auto-selected
 }
 
 export default function FilterSidebar({
@@ -27,6 +29,8 @@ export default function FilterSidebar({
   onFiltersChange,
   userLocation,
   onManualDestinationSelect,
+  onDestinationsCleared,
+  autoSelectedDestinations = [],
 }: FilterSidebarProps) {
   const [expandedSections, setExpandedSections] = useState({
     destinations: true,
@@ -61,6 +65,10 @@ export default function FilterSidebar({
       difficulty: [],
       rating: 0,
     });
+    // Notify parent that destinations were cleared
+    if (onDestinationsCleared) {
+      onDestinationsCleared();
+    }
   };
 
   const destinations = [
@@ -74,23 +82,9 @@ export default function FilterSidebar({
 
   // Auto-add user's location to destinations if detected
   useEffect(() => {
-    if (userLocation && userLocation.country) {
-      const userCountry = userLocation.country;
-      // Check if user's country matches one of our destinations and auto-select it
-      const matchingDestination = destinations.find(
-        (dest) => dest.toLowerCase() === userCountry.toLowerCase()
-      );
-
-      if (
-        matchingDestination &&
-        !filters.destinations.includes(matchingDestination)
-      ) {
-        updateFilter("destinations", [
-          ...filters.destinations,
-          matchingDestination,
-        ]);
-      }
-    }
+    // REMOVED: Duplicate logic that conflicts with useLocationBasedFilters hook
+    // This was causing the auto-selected destination to be re-added even after clearing
+    // The useLocationBasedFilters hook should handle all location-based preselection
   }, [userLocation, filters.destinations]);
 
   // const tourTypes = ["Wildlife", "Gorilla trekking", "Cultural", "Adventure"]; // Commented out - Tour Types filter removed
@@ -147,30 +141,60 @@ export default function FilterSidebar({
               </div>
             </div>
           )}
-          {destinations.map((destination) => (
-            <div key={destination} className="flex items-center space-x-2">
-              <Checkbox
-                id={destination}
-                checked={filters.destinations.includes(destination)}
-                onCheckedChange={(checked) => {
-                  if (checked) {
-                    updateFilter("destinations", [
-                      ...filters.destinations,
-                      destination,
-                    ]);
-                  } else {
-                    updateFilter(
-                      "destinations",
-                      filters.destinations.filter((d) => d !== destination)
-                    );
-                  }
-                }}
-              />
-              <Label htmlFor={destination} className="text-sm">
-                {destination}
-              </Label>
-            </div>
-          ))}
+          {destinations.map((destination) => {
+            const isAutoSelected =
+              autoSelectedDestinations.includes(destination);
+            const isChecked = filters.destinations.includes(destination);
+
+            return (
+              <div
+                key={destination}
+                className={`flex items-center space-x-2 ${
+                  isAutoSelected
+                    ? "bg-orange-50 dark:bg-orange-900/10 p-2 rounded border border-orange-200 dark:border-orange-800"
+                    : ""
+                }`}
+              >
+                <Checkbox
+                  id={destination}
+                  checked={isChecked}
+                  onCheckedChange={(checked) => {
+                    if (checked) {
+                      updateFilter("destinations", [
+                        ...filters.destinations,
+                        destination,
+                      ]);
+                      // Notify that user manually selected a destination
+                      if (onManualDestinationSelect) {
+                        onManualDestinationSelect(destination);
+                      }
+                    } else {
+                      const newDestinations = filters.destinations.filter(
+                        (d) => d !== destination
+                      );
+                      updateFilter("destinations", newDestinations);
+
+                      // If user unchecked an auto-selected destination or all destinations, reset location-based state
+                      if (
+                        isAutoSelected ||
+                        (newDestinations.length === 0 && onDestinationsCleared)
+                      ) {
+                        onDestinationsCleared?.();
+                      }
+                    }
+                  }}
+                />
+                <Label htmlFor={destination} className="text-sm flex-1">
+                  {destination}
+                  {isAutoSelected && (
+                    <span className="ml-2 text-xs text-orange-600 dark:text-orange-400 font-medium">
+                      📍 Auto-selected
+                    </span>
+                  )}
+                </Label>
+              </div>
+            );
+          })}
         </div>
       </FilterSection>
 

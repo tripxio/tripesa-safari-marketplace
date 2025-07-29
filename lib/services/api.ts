@@ -1,4 +1,4 @@
-import type { ApiResponse, Agency } from "@/lib/types";
+import type { ApiResponse, Agency, TourPackage } from "@/lib/types";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
@@ -154,6 +154,38 @@ export const getAgency = async (
 
   // Cache in memory for 15 minutes
   setMemoryCache(cacheKey, data, 900000);
+
+  return data;
+};
+
+export const getTour = async (slug: string): Promise<{ data: TourPackage }> => {
+  // Create cache key for this specific tour
+  const cacheKey = getCacheKey("tour", { slug });
+
+  // Check memory cache first (30 minutes for individual tour data)
+  const cachedData = getMemoryCache(cacheKey);
+  if (cachedData) {
+    return cachedData;
+  }
+
+  const response = await fetch(`${API_BASE_URL}/tours/${slug}/show`, {
+    next: {
+      revalidate: 1800, // 30 minutes
+      tags: ["tours", `tour-${slug}`],
+    },
+    headers: {
+      "Cache-Control": "s-maxage=1800, stale-while-revalidate=120",
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to fetch tour");
+  }
+
+  const data = await response.json();
+
+  // Cache in memory for 30 minutes
+  setMemoryCache(cacheKey, data, 1800000);
 
   return data;
 };
