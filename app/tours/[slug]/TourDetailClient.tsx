@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -31,6 +31,11 @@ interface TourDetailClientProps {
 export default function TourDetailClient({ tour }: TourDetailClientProps) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isInquiryModalOpen, setIsInquiryModalOpen] = useState(false);
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+  const [lightboxImageIndex, setLightboxImageIndex] = useState(0);
+  const [imageLoadingStates, setImageLoadingStates] = useState<
+    Record<number, boolean>
+  >({});
   // const [isWishlisted, setIsWishlisted] = useState(false); // Commented out for future use
 
   const images =
@@ -39,6 +44,33 @@ export default function TourDetailClient({ tour }: TourDetailClientProps) {
       : tour.first_media
       ? [tour.first_media]
       : [];
+
+  // Preload adjacent images for smooth navigation
+  useEffect(() => {
+    if (images.length <= 1) return;
+
+    const preloadImage = (index: number) => {
+      if (index >= 0 && index < images.length && !imageLoadingStates[index]) {
+        const img = new window.Image();
+        img.src = images[index].url;
+        img.onload = () => {
+          setImageLoadingStates((prev) => ({ ...prev, [index]: true }));
+        };
+      }
+    };
+
+    // Preload current, next, and previous images
+    preloadImage(currentImageIndex);
+    preloadImage(currentImageIndex + 1);
+    preloadImage(currentImageIndex - 1);
+
+    // Preload first few images on initial load
+    if (currentImageIndex === 0) {
+      for (let i = 0; i < Math.min(3, images.length); i++) {
+        preloadImage(i);
+      }
+    }
+  }, [currentImageIndex, images, imageLoadingStates]);
 
   const price = tour.display_price
     ? new Intl.NumberFormat("en-US", {
@@ -55,6 +87,48 @@ export default function TourDetailClient({ tour }: TourDetailClientProps) {
   const prevImage = () => {
     setCurrentImageIndex((prev) => (prev - 1 + images.length) % images.length);
   };
+
+  // Lightbox navigation functions
+  const openLightbox = (index: number) => {
+    setLightboxImageIndex(index);
+    setIsLightboxOpen(true);
+    document.body.style.overflow = "hidden"; // Prevent background scrolling
+  };
+
+  const closeLightbox = () => {
+    setIsLightboxOpen(false);
+    document.body.style.overflow = "unset"; // Restore scrolling
+  };
+
+  const nextLightboxImage = () => {
+    setLightboxImageIndex((prev) => (prev + 1) % images.length);
+  };
+
+  const prevLightboxImage = () => {
+    setLightboxImageIndex((prev) => (prev - 1 + images.length) % images.length);
+  };
+
+  // Keyboard navigation for lightbox
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (!isLightboxOpen) return;
+
+      switch (event.key) {
+        case "Escape":
+          closeLightbox();
+          break;
+        case "ArrowLeft":
+          prevLightboxImage();
+          break;
+        case "ArrowRight":
+          nextLightboxImage();
+          break;
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [isLightboxOpen, images.length]);
 
   const handleBookNow = () => {
     // Add booking logic here
@@ -101,12 +175,53 @@ export default function TourDetailClient({ tour }: TourDetailClientProps) {
       <div className="relative h-[60vh] md:h-[70vh] bg-gray-900">
         {images.length > 0 && (
           <>
+            {/* Loading skeleton */}
+            {!imageLoadingStates[currentImageIndex] && (
+              <div className="absolute inset-0 bg-gray-200 dark:bg-gray-700 animate-pulse">
+                <div className="flex items-center justify-center h-full">
+                  <div className="text-gray-400 dark:text-gray-500">
+                    <svg
+                      className="w-12 h-12 animate-spin"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
+                    </svg>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <Image
               src={images[currentImageIndex]?.url || "/fallback-image.jpg"}
               alt={images[currentImageIndex]?.name || tour.title}
               fill
-              className="object-cover"
-              priority
+              className={`object-cover transition-opacity duration-300 cursor-pointer ${
+                imageLoadingStates[currentImageIndex]
+                  ? "opacity-100"
+                  : "opacity-0"
+              }`}
+              priority={currentImageIndex === 0}
+              sizes="100vw"
+              onLoad={() => {
+                setImageLoadingStates((prev) => ({
+                  ...prev,
+                  [currentImageIndex]: true,
+                }));
+              }}
+              onClick={() => openLightbox(currentImageIndex)}
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/30" />
 
@@ -211,7 +326,7 @@ export default function TourDetailClient({ tour }: TourDetailClientProps) {
           {/* Left Column - Tour Details */}
           <div className="lg:col-span-2 space-y-8">
             {/* Quick Info Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Card>
                 <CardContent className="p-4 text-center">
                   <Clock className="h-6 w-6 text-orange-500 mx-auto mb-2" />
@@ -221,6 +336,7 @@ export default function TourDetailClient({ tour }: TourDetailClientProps) {
                   <div className="text-sm text-muted-foreground">Duration</div>
                 </CardContent>
               </Card>
+              {/* Group Size card commented out - backend doesn't have this input yet
               <Card>
                 <CardContent className="p-4 text-center">
                   <Users className="h-6 w-6 text-orange-500 mx-auto mb-2" />
@@ -230,6 +346,7 @@ export default function TourDetailClient({ tour }: TourDetailClientProps) {
                   </div>
                 </CardContent>
               </Card>
+              */}
               <Card>
                 <CardContent className="p-4 text-center">
                   <Calendar className="h-6 w-6 text-orange-500 mx-auto mb-2" />
@@ -241,11 +358,31 @@ export default function TourDetailClient({ tour }: TourDetailClientProps) {
 
             {/* Tour Details Tabs */}
             <Tabs defaultValue="overview" className="w-full">
-              <TabsList className="grid w-full grid-cols-4">
-                <TabsTrigger value="overview">Overview</TabsTrigger>
-                <TabsTrigger value="itinerary">Itinerary</TabsTrigger>
-                <TabsTrigger value="included">Included</TabsTrigger>
-                <TabsTrigger value="gallery">Gallery</TabsTrigger>
+              <TabsList className="grid w-full grid-cols-4 bg-gray-100 dark:bg-gray-800 h-12">
+                <TabsTrigger
+                  value="overview"
+                  className="text-gray-700 dark:text-gray-300 font-semibold data-[state=active]:bg-orange-500 data-[state=active]:text-white data-[state=active]:shadow-md"
+                >
+                  Overview
+                </TabsTrigger>
+                <TabsTrigger
+                  value="itinerary"
+                  className="text-gray-700 dark:text-gray-300 font-semibold data-[state=active]:bg-orange-500 data-[state=active]:text-white data-[state=active]:shadow-md"
+                >
+                  Itinerary
+                </TabsTrigger>
+                <TabsTrigger
+                  value="included"
+                  className="text-gray-700 dark:text-gray-300 font-semibold data-[state=active]:bg-orange-500 data-[state=active]:text-white data-[state=active]:shadow-md"
+                >
+                  Included
+                </TabsTrigger>
+                <TabsTrigger
+                  value="gallery"
+                  className="text-gray-700 dark:text-gray-300 font-semibold data-[state=active]:bg-orange-500 data-[state=active]:text-white data-[state=active]:shadow-md"
+                >
+                  Gallery
+                </TabsTrigger>
               </TabsList>
 
               <TabsContent value="overview" className="space-y-6">
@@ -429,14 +566,53 @@ export default function TourDetailClient({ tour }: TourDetailClientProps) {
                           <div
                             key={index}
                             className="relative aspect-square rounded-lg overflow-hidden cursor-pointer group"
-                            onClick={() => setCurrentImageIndex(index)}
+                            onClick={() => openLightbox(index)}
                           >
+                            {/* Loading skeleton for gallery images */}
+                            {!imageLoadingStates[index] && (
+                              <div className="absolute inset-0 bg-gray-200 dark:bg-gray-700 animate-pulse flex items-center justify-center">
+                                <div className="w-8 h-8 text-gray-400">
+                                  <svg
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={1}
+                                      d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                                    />
+                                  </svg>
+                                </div>
+                              </div>
+                            )}
+
                             <Image
                               src={image.url}
                               alt={image.name || `Gallery image ${index + 1}`}
                               fill
-                              className="object-cover group-hover:scale-105 transition-transform duration-300"
+                              className={`object-cover group-hover:scale-105 transition-all duration-300 ${
+                                imageLoadingStates[index]
+                                  ? "opacity-100"
+                                  : "opacity-0"
+                              }`}
+                              sizes="(max-width: 768px) 50vw, 33vw"
+                              loading={index < 6 ? "eager" : "lazy"} // Load first 6 images eagerly
+                              onLoad={() => {
+                                setImageLoadingStates((prev) => ({
+                                  ...prev,
+                                  [index]: true,
+                                }));
+                              }}
                             />
+
+                            {/* Current image indicator */}
+                            {index === currentImageIndex && (
+                              <div className="absolute top-2 right-2 bg-orange-500 text-white px-2 py-1 rounded-full text-xs font-semibold">
+                                Current
+                              </div>
+                            )}
                           </div>
                         ))}
                       </div>
@@ -550,6 +726,95 @@ export default function TourDetailClient({ tour }: TourDetailClientProps) {
         tour={tour}
         agencySlug={agencySlug}
       />
+
+      {/* Lightbox Modal */}
+      {isLightboxOpen && (
+        <div className="fixed inset-0 z-50 bg-black bg-opacity-95 flex items-center justify-center">
+          {/* Close button */}
+          <button
+            onClick={closeLightbox}
+            className="absolute top-4 right-4 z-10 text-white hover:text-gray-300 transition-colors"
+            aria-label="Close lightbox"
+          >
+            <X className="h-8 w-8" />
+          </button>
+
+          {/* Image counter */}
+          <div className="absolute top-4 left-4 z-10 text-white bg-black bg-opacity-50 px-3 py-1 rounded-full text-sm">
+            {lightboxImageIndex + 1} / {images.length}
+          </div>
+
+          {/* Navigation buttons */}
+          {images.length > 1 && (
+            <>
+              <button
+                onClick={prevLightboxImage}
+                className="absolute left-4 top-1/2 -translate-y-1/2 z-10 text-white hover:text-gray-300 bg-black bg-opacity-50 hover:bg-opacity-70 rounded-full p-3 transition-all"
+                aria-label="Previous image"
+              >
+                <ChevronLeft className="h-6 w-6" />
+              </button>
+              <button
+                onClick={nextLightboxImage}
+                className="absolute right-4 top-1/2 -translate-y-1/2 z-10 text-white hover:text-gray-300 bg-black bg-opacity-50 hover:bg-opacity-70 rounded-full p-3 transition-all"
+                aria-label="Next image"
+              >
+                <ChevronRight className="h-6 w-6" />
+              </button>
+            </>
+          )}
+
+          {/* Main image */}
+          <div className="relative w-full h-full flex items-center justify-center p-4">
+            <div className="relative max-w-full max-h-full">
+              <Image
+                src={images[lightboxImageIndex]?.url || "/fallback-image.jpg"}
+                alt={
+                  images[lightboxImageIndex]?.name ||
+                  `Gallery image ${lightboxImageIndex + 1}`
+                }
+                width={1200}
+                height={800}
+                className="max-w-full max-h-full object-contain"
+                priority
+              />
+            </div>
+          </div>
+
+          {/* Image info */}
+          {images[lightboxImageIndex]?.name && (
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-white bg-black bg-opacity-50 px-4 py-2 rounded-lg text-center max-w-md">
+              <p className="text-sm">{images[lightboxImageIndex].name}</p>
+            </div>
+          )}
+
+          {/* Thumbnail strip */}
+          {images.length > 1 && (
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex space-x-2 max-w-screen-lg overflow-x-auto p-2">
+              {images.map((image, index) => (
+                <button
+                  key={index}
+                  onClick={() => setLightboxImageIndex(index)}
+                  className={`relative w-16 h-16 flex-shrink-0 rounded overflow-hidden transition-all ${
+                    index === lightboxImageIndex
+                      ? "ring-2 ring-orange-500 opacity-100"
+                      : "opacity-60 hover:opacity-80"
+                  }`}
+                  aria-label={`View image ${index + 1}`}
+                >
+                  <Image
+                    src={image.url}
+                    alt={image.name || `Thumbnail ${index + 1}`}
+                    width={64}
+                    height={64}
+                    className="w-full h-full object-cover"
+                  />
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
