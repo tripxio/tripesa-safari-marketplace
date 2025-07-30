@@ -2,7 +2,7 @@
 
 import type React from "react";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { ChevronDown, ChevronUp, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -39,6 +39,35 @@ export default function FilterSidebar({
     // tourTypes: true, // Commented out - Tour Types filter removed
   });
 
+  // Local state for sliders to prevent jumping
+  const [localDuration, setLocalDuration] = useState(filters.duration);
+  const [localPriceRange, setLocalPriceRange] = useState(filters.priceRange);
+
+  // Debounce timers
+  const durationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const priceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Update local state when filters change externally
+  useEffect(() => {
+    setLocalDuration(filters.duration);
+  }, [filters.duration]);
+
+  useEffect(() => {
+    setLocalPriceRange(filters.priceRange);
+  }, [filters.priceRange]);
+
+  // Cleanup timeouts on unmount
+  useEffect(() => {
+    return () => {
+      if (durationTimeoutRef.current) {
+        clearTimeout(durationTimeoutRef.current);
+      }
+      if (priceTimeoutRef.current) {
+        clearTimeout(priceTimeoutRef.current);
+      }
+    };
+  }, []);
+
   const toggleSection = (section: keyof typeof expandedSections) => {
     setExpandedSections((prev) => ({
       ...prev,
@@ -53,7 +82,46 @@ export default function FilterSidebar({
     });
   };
 
+  // Debounced duration update
+  const handleDurationChange = useCallback(
+    (value: [number, number]) => {
+      setLocalDuration(value);
+
+      // Clear existing timeout
+      if (durationTimeoutRef.current) {
+        clearTimeout(durationTimeoutRef.current);
+      }
+
+      // Set new timeout for 3 seconds
+      durationTimeoutRef.current = setTimeout(() => {
+        updateFilter("duration", value);
+      }, 3000);
+    },
+    [filters]
+  );
+
+  // Debounced price range update
+  const handlePriceRangeChange = useCallback(
+    (value: [number, number]) => {
+      setLocalPriceRange(value);
+
+      // Clear existing timeout
+      if (priceTimeoutRef.current) {
+        clearTimeout(priceTimeoutRef.current);
+      }
+
+      // Set new timeout for 3 seconds
+      priceTimeoutRef.current = setTimeout(() => {
+        updateFilter("priceRange", value);
+      }, 3000);
+    },
+    [filters]
+  );
+
   const clearAllFilters = () => {
+    setLocalDuration([1, 30]);
+    setLocalPriceRange([0, 10000]);
+
     onFiltersChange({
       searchQuery: "",
       destinations: [],
@@ -202,8 +270,8 @@ export default function FilterSidebar({
         <div className="space-y-4">
           <div className="px-2">
             <Slider
-              value={filters.duration}
-              onValueChange={(value) => updateFilter("duration", value)}
+              value={localDuration}
+              onValueChange={handleDurationChange}
               max={30}
               min={1}
               step={1}
@@ -212,10 +280,10 @@ export default function FilterSidebar({
           </div>
           <div className="flex justify-between text-sm text-muted-foreground">
             <span>
-              {filters.duration[0]} day{filters.duration[0] !== 1 ? "s" : ""}
+              {localDuration[0]} day{localDuration[0] !== 1 ? "s" : ""}
             </span>
             <span>
-              {filters.duration[1]} day{filters.duration[1] !== 1 ? "s" : ""}
+              {localDuration[1]} day{localDuration[1] !== 1 ? "s" : ""}
             </span>
           </div>
         </div>
@@ -225,8 +293,8 @@ export default function FilterSidebar({
         <div className="space-y-4">
           <div className="px-2">
             <Slider
-              value={filters.priceRange}
-              onValueChange={(value) => updateFilter("priceRange", value)}
+              value={localPriceRange}
+              onValueChange={handlePriceRangeChange}
               max={10000}
               min={0}
               step={100}
@@ -234,8 +302,8 @@ export default function FilterSidebar({
             />
           </div>
           <div className="flex justify-between text-sm text-muted-foreground">
-            <span>${filters.priceRange[0].toLocaleString()}</span>
-            <span>${filters.priceRange[1].toLocaleString()}</span>
+            <span>${localPriceRange[0].toLocaleString()}</span>
+            <span>${localPriceRange[1].toLocaleString()}</span>
           </div>
         </div>
       </FilterSection>

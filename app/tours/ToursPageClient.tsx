@@ -126,7 +126,7 @@ export default function ToursPageClient({ children }: ToursPageClientProps) {
         params.set("page", "1");
 
         router.push(`?${params.toString()}`);
-      }, 300); // 300ms debounce
+      }, 3000); // Increased to 3 seconds to match slider debounce
     },
     [router, searchParams]
   );
@@ -146,8 +146,11 @@ export default function ToursPageClient({ children }: ToursPageClientProps) {
       }
 
       searchTimeoutRef.current = setTimeout(() => {
-        updateURL({ query });
-      }, 500); // 500ms debounce for search
+        // Only trigger search if query has 3+ characters or is empty (to clear results)
+        if (query.length >= 3 || query.length === 0) {
+          updateURL({ query });
+        }
+      }, 1000); // Increased to 1 second debounce for search
     },
     [updateURL]
   );
