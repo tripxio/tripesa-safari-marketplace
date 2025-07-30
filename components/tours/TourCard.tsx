@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { MapPin, Calendar } from "lucide-react";
+import { MapPin, Calendar, Loader2 } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -24,6 +25,8 @@ interface TourCardProps {
 
 export default function TourCard({ tour, viewMode }: TourCardProps) {
   const [isDescriptionModalOpen, setIsDescriptionModalOpen] = useState(false);
+  const [isNavigating, setIsNavigating] = useState(false);
+  const router = useRouter();
 
   const imageUrl =
     tour.first_media?.url ||
@@ -46,6 +49,21 @@ export default function TourCard({ tour, viewMode }: TourCardProps) {
     e.preventDefault();
     e.stopPropagation();
     setIsDescriptionModalOpen(true);
+  };
+
+  const handleViewDetails = async () => {
+    setIsNavigating(true);
+
+    // Log the booking click
+    logTourBookingClick(
+      tour.id.toString(),
+      tour.title,
+      tour.display_price || undefined,
+      viewMode === "grid" ? "tour_card_grid" : "tour_card_list"
+    );
+
+    // Navigate to tour details
+    router.push(tourUrl);
   };
 
   const descriptionElement = tour.short_description && (
@@ -134,16 +152,14 @@ export default function TourCard({ tour, viewMode }: TourCardProps) {
                   <TourOperatorInfo agencyId={tour.agency_id} />
                   <Button
                     className="bg-orange-500 hover:bg-orange-600 text-white"
-                    onClick={() => {
-                      logTourBookingClick(
-                        tour.id.toString(),
-                        tour.title,
-                        tour.display_price || undefined,
-                        "tour_card_list"
-                      );
-                    }}
+                    onClick={handleViewDetails}
+                    disabled={isNavigating}
                   >
-                    <Link href={tourUrl}>View Details</Link>
+                    {isNavigating ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      "View Details"
+                    )}
                   </Button>
                 </div>
               </div>
@@ -210,16 +226,14 @@ export default function TourCard({ tour, viewMode }: TourCardProps) {
               </div>
               <Button
                 className="bg-orange-500 hover:bg-orange-600 text-white"
-                onClick={() => {
-                  logTourBookingClick(
-                    tour.id.toString(),
-                    tour.title,
-                    tour.display_price || undefined,
-                    "tour_card_grid"
-                  );
-                }}
+                onClick={handleViewDetails}
+                disabled={isNavigating}
               >
-                <Link href={tourUrl}>View Details</Link>
+                {isNavigating ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  "View Details"
+                )}
               </Button>
             </div>
           </CardContent>
