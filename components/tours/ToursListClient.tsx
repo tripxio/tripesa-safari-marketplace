@@ -188,7 +188,7 @@ export default function ToursListClient({
     }
 
     const total = filteredAndSortedTours.length;
-    const originalTotal = tours.length;
+    const originalTotal = paginationMeta?.total || tours.length;
 
     return (
       <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
@@ -206,6 +206,7 @@ export default function ToursListClient({
     );
   }, [
     filteredAndSortedTours.length,
+    paginationMeta?.total,
     tours.length,
     filters.searchQuery,
     filters.destinations.length,

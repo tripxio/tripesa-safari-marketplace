@@ -129,6 +129,7 @@ export default function TourCard({ tour, viewMode }: TourCardProps) {
                   {descriptionElement}
 
                   <div className="flex flex-wrap gap-2 mb-4">
+                    {/* Commented out tags until they become global variables
                     {tour.package_tags &&
                       tour.package_tags.length > 0 &&
                       tour.package_tags.map((tag, index) => (
@@ -140,6 +141,7 @@ export default function TourCard({ tour, viewMode }: TourCardProps) {
                           {tag}
                         </Badge>
                       ))}
+                    */}
                     {tour.featured && (
                       <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">
                         Featured
@@ -196,6 +198,7 @@ export default function TourCard({ tour, viewMode }: TourCardProps) {
               {descriptionElement}
 
               <div className="flex flex-wrap gap-2 mb-4">
+                {/* Commented out tags until they become global variables
                 {tour.package_tags &&
                   tour.package_tags.length > 0 &&
                   tour.package_tags.map((tag, index) => (
@@ -207,6 +210,7 @@ export default function TourCard({ tour, viewMode }: TourCardProps) {
                       {tag}
                     </Badge>
                   ))}
+                */}
                 {tour.featured && (
                   <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">
                     Featured
