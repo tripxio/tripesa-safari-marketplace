@@ -299,21 +299,21 @@ export const rollbackToVersion = async (
 };
 
 export const getDefaultColors = (): ThemeColors => ({
-  primary: "#f97316", // Orange
-  secondary: "#64748b", // Slate
-  accent: "#8b5cf6", // Purple
-  background: "#ffffff", // White
-  text: "#1f2937", // Gray-800
-  muted: "#6b7280", // Gray-500
+  primary: "#171717", // 0 0% 9% - matches --primary in light mode
+  secondary: "#f5f5f5", // 0 0% 96.1% - matches --secondary in light mode
+  accent: "#f5f5f5", // 0 0% 96.1% - matches --accent in light mode
+  background: "#F4F3F2", // Updated from pure white to warm off-white
+  text: "#0a0a0a", // 0 0% 3.9% - matches --foreground in light mode
+  muted: "#737373", // 0 0% 45.1% - matches --muted-foreground in light mode
 });
 
 export const getDefaultDarkColors = (): ThemeColors => ({
-  primary: "#f97316", // Orange
-  secondary: "#94a3b8", // Slate-400
-  accent: "#a78bfa", // Purple-400
-  background: "#0f172a", // Slate-900
-  text: "#f1f5f9", // Slate-100
-  muted: "#64748b", // Slate-500
+  primary: "#fafafa", // 0 0% 98% - matches --primary in dark mode
+  secondary: "#262626", // 0 0% 14.9% - matches --secondary in dark mode
+  accent: "#262626", // 0 0% 14.9% - matches --accent in dark mode
+  background: "#0a0a0a", // 0 0% 3.9% - matches --background in dark mode
+  text: "#fafafa", // 0 0% 98% - matches --foreground in dark mode
+  muted: "#a3a3a3", // 0 0% 63.9% - matches --muted-foreground in dark mode
 });
 
 // Enhanced Banner Management

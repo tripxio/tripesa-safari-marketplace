@@ -30,6 +30,51 @@ export default function AdminLoginPage() {
     }
   }, [loginStep, router]);
 
+  const getErrorMessage = (error: any): string => {
+    const message = error.message || error.code || "";
+
+    // Map Firebase auth errors to user-friendly messages
+    if (
+      message.includes("Invalid password") ||
+      message.includes("auth/wrong-password")
+    ) {
+      return "Incorrect email or password. Please try again.";
+    }
+    if (
+      message.includes("User not found") ||
+      message.includes("auth/user-not-found")
+    ) {
+      return "No account found with this email address.";
+    }
+    if (
+      message.includes("Too many requests") ||
+      message.includes("auth/too-many-requests")
+    ) {
+      return "Too many failed attempts. Please try again later.";
+    }
+    if (
+      message.includes("Invalid email") ||
+      message.includes("auth/invalid-email")
+    ) {
+      return "Please enter a valid email address.";
+    }
+    if (
+      message.includes("User disabled") ||
+      message.includes("auth/user-disabled")
+    ) {
+      return "This account has been disabled. Please contact support.";
+    }
+    if (message.includes("2FA code required")) {
+      return "Please enter your 2FA code.";
+    }
+    if (message.includes("Invalid 2FA code")) {
+      return "Invalid 2FA code. Please try again.";
+    }
+
+    // Default fallback
+    return "Login failed. Please check your credentials and try again.";
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -56,7 +101,7 @@ export default function AdminLoginPage() {
         toast.error("Invalid 2FA code. Please try again.");
         setTwoFactorCode("");
       } else {
-        toast.error(error.message || "Login failed. Please try again.");
+        toast.error(getErrorMessage(error));
         // Reset on other errors
         setShowTwoFactor(false);
         setLoginStep("initial");

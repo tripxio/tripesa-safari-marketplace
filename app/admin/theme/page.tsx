@@ -1,13 +1,11 @@
 "use client";
 
-import { Suspense } from "react";
-import UnderConstructionModal from "@/components/admin/UnderConstructionModal";
-import AdminSkeleton from "@/components/admin/AdminSkeleton";
+import ThemeColorManager from "@/components/admin/ThemeColorManager";
 
 export default function ThemePage() {
   return (
-    <Suspense fallback={<AdminSkeleton />}>
-      <UnderConstructionModal />
-    </Suspense>
+    <div className="space-y-6">
+      <ThemeColorManager />
+    </div>
   );
 }

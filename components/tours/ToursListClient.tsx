@@ -188,19 +188,19 @@ export default function ToursListClient({
 
     // Always show total count, with filtered info when filters are active
     return (
-      <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-        <div className="text-sm text-blue-700 dark:text-blue-300">
+      <div className="mb-4 p-3 bg-muted/50 border border-border rounded-lg">
+        <div className="text-sm text-muted-foreground">
           {hasActiveFilters ? (
             <>
-              <span className="font-medium">
+              <span className="font-medium text-foreground">
                 {total} tour{total !== 1 ? "s" : ""} found
               </span>
-              <span className="text-blue-600 dark:text-blue-400 ml-1">
+              <span className="text-muted-foreground ml-1">
                 (filtered from {originalTotal} total tours)
               </span>
             </>
           ) : (
-            <span className="font-medium">
+            <span className="font-medium text-foreground">
               {originalTotal} tour{originalTotal !== 1 ? "s" : ""} available
             </span>
           )}

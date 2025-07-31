@@ -24,14 +24,25 @@ export default function ThemeDemoPage() {
     );
   }
 
-  const currentColors: ThemeColors = config?.[mode] || {
-    primary: "#f97316",
-    secondary: "#64748b",
-    accent: "#8b5cf6",
-    background: "#ffffff",
-    text: "#1f2937",
-    muted: "#6b7280",
-  };
+  const currentColors: ThemeColors =
+    config?.[mode] ||
+    (mode === "dark"
+      ? {
+          primary: "#fafafa", // 0 0% 98% - matches --primary in dark mode
+          secondary: "#262626", // 0 0% 14.9% - matches --secondary in dark mode
+          accent: "#262626", // 0 0% 14.9% - matches --accent in dark mode
+          background: "#0a0a0a", // 0 0% 3.9% - matches --background in dark mode
+          text: "#fafafa", // 0 0% 98% - matches --foreground in dark mode
+          muted: "#a3a3a3", // 0 0% 63.9% - matches --muted-foreground in dark mode
+        }
+      : {
+          primary: "#171717", // 0 0% 9% - matches --primary in light mode
+          secondary: "#f5f5f5", // 0 0% 96.1% - matches --secondary in light mode
+          accent: "#f5f5f5", // 0 0% 96.1% - matches --accent in light mode
+          background: "#F4F3F2", // Updated from pure white to warm off-white
+          text: "#0a0a0a", // 0 0% 3.9% - matches --foreground in light mode
+          muted: "#737373", // 0 0% 45.1% - matches --muted-foreground in light mode
+        });
 
   return (
     <div

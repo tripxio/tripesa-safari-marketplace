@@ -170,7 +170,7 @@ export default function TourDetailClient({ tour }: TourDetailClientProps) {
     : "default-agency";
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-background">
       {/* Hero Section with Image Gallery */}
       <div className="relative h-[60vh] md:h-[70vh] bg-gray-900">
         {images.length > 0 && (
