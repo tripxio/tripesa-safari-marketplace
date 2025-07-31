@@ -117,7 +117,7 @@ export default function ToursListClient({
       (filters.useDurationFilter &&
         (filters.duration[0] !== 1 || filters.duration[1] !== 30)) ||
       (filters.usePriceRangeFilter &&
-        (filters.priceRange[0] !== 0 || filters.priceRange[1] !== 10000)) ||
+        (filters.priceRange[0] !== 0 || filters.priceRange[1] !== 50000)) ||
       filters.tourTypes.length > 0
     );
   }, [filters]);
@@ -180,7 +180,7 @@ export default function ToursListClient({
       (filters.useDurationFilter &&
         (filters.duration[0] !== 1 || filters.duration[1] !== 30)) ||
       (filters.usePriceRangeFilter &&
-        (filters.priceRange[0] !== 0 || filters.priceRange[1] !== 10000)) ||
+        (filters.priceRange[0] !== 0 || filters.priceRange[1] !== 50000)) ||
       filters.tourTypes.length > 0;
 
     const total = filteredAndSortedTours.length;

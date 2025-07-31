@@ -99,7 +99,7 @@ export default function FilterSidebar({
             ]
           : [
               localPriceRange[0],
-              Math.max(localPriceRange[0], Math.min(numValue, 10000)),
+              Math.max(localPriceRange[0], Math.min(numValue, 50000)),
             ];
 
       setLocalPriceRange(newPriceRange);
@@ -126,13 +126,13 @@ export default function FilterSidebar({
 
   const clearAllFilters = () => {
     setLocalDuration([1, 30]);
-    setLocalPriceRange([0, 10000]);
+    setLocalPriceRange([0, 50000]);
 
     onFiltersChange({
       searchQuery: "",
       destinations: [],
       duration: [1, 30],
-      priceRange: [0, 10000],
+      priceRange: [0, 50000],
       useDurationFilter: false,
       usePriceRangeFilter: false,
       tourTypes: [],
@@ -352,7 +352,7 @@ export default function FilterSidebar({
                 onChange={(e) => handlePriceRangeChange("max", e.target.value)}
                 onBlur={() => updateFilter("priceRange", localPriceRange)}
                 min={localPriceRange[0]}
-                max="10000"
+                max="50000"
                 className="w-24 text-center"
                 disabled={!filters.usePriceRangeFilter}
                 placeholder="Max"

@@ -64,7 +64,7 @@ export default function ToursPageClient({ children }: ToursPageClientProps) {
     searchQuery: searchParams.get("query") || "",
     destinations: [],
     duration: [1, 30],
-    priceRange: [0, 10000],
+    priceRange: [0, 50000],
     useDurationFilter: false,
     usePriceRangeFilter: false,
     tourTypes: [],
