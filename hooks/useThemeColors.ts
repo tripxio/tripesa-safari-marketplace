@@ -101,13 +101,47 @@ export const useThemeColors = () => {
     const root = document.documentElement;
 
     // Convert hex colors to HSL and apply CSS custom properties
+    // Map to the variables defined in globals.css
     root.style.setProperty("--primary", hexToHsl(colors.primary));
+    root.style.setProperty(
+      "--primary-foreground",
+      mode === "light" ? "0 0% 98%" : "0 0% 9%"
+    );
     root.style.setProperty("--secondary", hexToHsl(colors.secondary));
+    root.style.setProperty(
+      "--secondary-foreground",
+      mode === "light" ? "0 0% 9%" : "0 0% 98%"
+    );
     root.style.setProperty("--accent", hexToHsl(colors.accent));
+    root.style.setProperty(
+      "--accent-foreground",
+      mode === "light" ? "0 0% 9%" : "0 0% 98%"
+    );
     root.style.setProperty("--background", hexToHsl(colors.background));
     root.style.setProperty("--foreground", hexToHsl(colors.text));
     root.style.setProperty("--muted", hexToHsl(colors.muted));
     root.style.setProperty("--muted-foreground", hexToHsl(colors.muted));
+    root.style.setProperty("--card", hexToHsl(colors.background));
+    root.style.setProperty("--card-foreground", hexToHsl(colors.text));
+    root.style.setProperty("--popover", hexToHsl(colors.background));
+    root.style.setProperty("--popover-foreground", hexToHsl(colors.text));
+    root.style.setProperty(
+      "--border",
+      mode === "light" ? "0 0% 89.8%" : "0 0% 14.9%"
+    );
+    root.style.setProperty(
+      "--input",
+      mode === "light" ? "0 0% 89.8%" : "0 0% 14.9%"
+    );
+    root.style.setProperty("--ring", hexToHsl(colors.primary));
+    root.style.setProperty(
+      "--destructive",
+      mode === "light" ? "0 84.2% 60.2%" : "0 62.8% 30.6%"
+    );
+    root.style.setProperty(
+      "--destructive-foreground",
+      mode === "light" ? "0 0% 98%" : "0 0% 98%"
+    );
 
     // Add mode-specific class
     root.classList.remove("theme-light", "theme-dark");

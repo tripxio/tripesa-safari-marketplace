@@ -237,8 +237,8 @@ export default function ToursPageClient({ children }: ToursPageClientProps) {
         <div className="container mx-auto px-4 py-8">
           {/* Location Detection Status */}
           {isDetectingLocation && (
-            <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-              <div className="flex items-center space-x-2 text-blue-700 dark:text-blue-300">
+            <div className="mb-4 p-3 bg-muted/50 border border-border rounded-lg">
+              <div className="flex items-center space-x-2 text-muted-foreground">
                 <Globe className="h-4 w-4 animate-spin" />
                 <span className="text-sm">
                   Detecting your location to show relevant tours...

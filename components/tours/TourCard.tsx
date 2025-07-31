@@ -177,6 +177,12 @@ export default function TourCard({ tour, viewMode }: TourCardProps) {
                 style={{ backgroundImage: `url('${imageUrl}')` }}
               />
             </Link>
+            {/* Price badge positioned absolutely in top right */}
+            <div className="absolute top-3 right-3">
+              <div className="bg-slate-800/95 backdrop-blur-sm text-white px-3 py-1 rounded-full text-sm font-semibold shadow-lg border border-slate-700/50">
+                {price}
+              </div>
+            </div>
           </div>
 
           <CardContent className="p-6 flex-1 flex flex-col">
@@ -220,14 +226,7 @@ export default function TourCard({ tour, viewMode }: TourCardProps) {
             </div>
 
             <div className="flex items-center justify-between mt-auto">
-              <div>
-                <div className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {price}
-                </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">
-                  per {tour.unit?.name?.toLowerCase() || "person"}
-                </div>
-              </div>
+              <TourOperatorInfo agencyId={tour.agency_id} />
               <Button
                 className="bg-orange-500 hover:bg-orange-600 text-white"
                 onClick={handleViewDetails}
