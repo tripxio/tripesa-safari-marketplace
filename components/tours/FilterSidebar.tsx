@@ -7,7 +7,7 @@ import { ChevronDown, ChevronUp, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { Slider } from "@/components/ui/slider";
+import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { FilterState } from "@/lib/types";
 
@@ -43,10 +43,6 @@ export default function FilterSidebar({
   const [localDuration, setLocalDuration] = useState(filters.duration);
   const [localPriceRange, setLocalPriceRange] = useState(filters.priceRange);
 
-  // Debounce timers
-  const durationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const priceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
   // Update local state when filters change externally
   useEffect(() => {
     setLocalDuration(filters.duration);
@@ -55,18 +51,6 @@ export default function FilterSidebar({
   useEffect(() => {
     setLocalPriceRange(filters.priceRange);
   }, [filters.priceRange]);
-
-  // Cleanup timeouts on unmount
-  useEffect(() => {
-    return () => {
-      if (durationTimeoutRef.current) {
-        clearTimeout(durationTimeoutRef.current);
-      }
-      if (priceTimeoutRef.current) {
-        clearTimeout(priceTimeoutRef.current);
-      }
-    };
-  }, []);
 
   const toggleSection = (section: keyof typeof expandedSections) => {
     setExpandedSections((prev) => ({
@@ -82,51 +66,75 @@ export default function FilterSidebar({
     });
   };
 
-  // Debounced duration update
+  // Handle duration input changes
   const handleDurationChange = useCallback(
-    (value: [number, number]) => {
-      setLocalDuration(value);
+    (type: "min" | "max", value: string) => {
+      const numValue = parseInt(value) || 0;
+      const newDuration: [number, number] =
+        type === "min"
+          ? [
+              Math.max(1, Math.min(numValue, localDuration[1])),
+              localDuration[1],
+            ]
+          : [
+              localDuration[0],
+              Math.max(localDuration[0], Math.min(numValue, 30)),
+            ];
 
-      // Clear existing timeout
-      if (durationTimeoutRef.current) {
-        clearTimeout(durationTimeoutRef.current);
-      }
+      setLocalDuration(newDuration);
+      updateFilter("duration", newDuration);
+    },
+    [localDuration, filters]
+  );
 
-      // Set new timeout for 3 seconds
-      durationTimeoutRef.current = setTimeout(() => {
-        updateFilter("duration", value);
-      }, 3000);
+  // Handle price range input changes
+  const handlePriceRangeChange = useCallback(
+    (type: "min" | "max", value: string) => {
+      const numValue = parseInt(value) || 0;
+      const newPriceRange: [number, number] =
+        type === "min"
+          ? [
+              Math.max(0, Math.min(numValue, localPriceRange[1])),
+              localPriceRange[1],
+            ]
+          : [
+              localPriceRange[0],
+              Math.max(localPriceRange[0], Math.min(numValue, 50000)),
+            ];
+
+      setLocalPriceRange(newPriceRange);
+      updateFilter("priceRange", newPriceRange);
+    },
+    [localPriceRange, filters]
+  );
+
+  // Handle duration filter checkbox
+  const handleDurationFilterToggle = useCallback(
+    (checked: boolean) => {
+      updateFilter("useDurationFilter", checked);
     },
     [filters]
   );
 
-  // Debounced price range update
-  const handlePriceRangeChange = useCallback(
-    (value: [number, number]) => {
-      setLocalPriceRange(value);
-
-      // Clear existing timeout
-      if (priceTimeoutRef.current) {
-        clearTimeout(priceTimeoutRef.current);
-      }
-
-      // Set new timeout for 3 seconds
-      priceTimeoutRef.current = setTimeout(() => {
-        updateFilter("priceRange", value);
-      }, 3000);
+  // Handle price range filter checkbox
+  const handlePriceRangeFilterToggle = useCallback(
+    (checked: boolean) => {
+      updateFilter("usePriceRangeFilter", checked);
     },
     [filters]
   );
 
   const clearAllFilters = () => {
     setLocalDuration([1, 30]);
-    setLocalPriceRange([0, 10000]);
+    setLocalPriceRange([0, 50000]);
 
     onFiltersChange({
       searchQuery: "",
       destinations: [],
       duration: [1, 30],
-      priceRange: [0, 10000],
+      priceRange: [0, 50000],
+      useDurationFilter: false,
+      usePriceRangeFilter: false,
       tourTypes: [],
       accommodationTypes: [],
       groupSizes: [],
@@ -268,42 +276,89 @@ export default function FilterSidebar({
 
       <FilterSection title="Duration" section="duration">
         <div className="space-y-4">
-          <div className="px-2">
-            <Slider
-              value={localDuration}
-              onValueChange={handleDurationChange}
-              max={30}
-              min={1}
-              step={1}
-              className="w-full"
+          <div className="flex items-center space-x-2 mb-3">
+            <Checkbox
+              id="use-duration-filter"
+              checked={filters.useDurationFilter}
+              onCheckedChange={handleDurationFilterToggle}
             />
+            <Label
+              htmlFor="use-duration-filter"
+              className="text-sm font-medium"
+            >
+              Filter by duration
+            </Label>
           </div>
-          <div className="flex justify-between text-sm text-muted-foreground">
-            <span>
-              {localDuration[0]} day{localDuration[0] !== 1 ? "s" : ""}
-            </span>
-            <span>
-              {localDuration[1]} day{localDuration[1] !== 1 ? "s" : ""}
-            </span>
+          <div className="space-y-3">
+            <div className="flex items-center space-x-2">
+              <Input
+                type="number"
+                value={localDuration[0]}
+                onChange={(e) => handleDurationChange("min", e.target.value)}
+                onBlur={() => updateFilter("duration", localDuration)}
+                min="1"
+                max={localDuration[1]}
+                className="w-20 text-center"
+                disabled={!filters.useDurationFilter}
+                placeholder="Min"
+              />
+              <span className="text-sm text-muted-foreground">to</span>
+              <Input
+                type="number"
+                value={localDuration[1]}
+                onChange={(e) => handleDurationChange("max", e.target.value)}
+                onBlur={() => updateFilter("duration", localDuration)}
+                min={localDuration[0]}
+                max="30"
+                className="w-20 text-center"
+                disabled={!filters.useDurationFilter}
+                placeholder="Max"
+              />
+              <span className="text-sm text-muted-foreground">days</span>
+            </div>
           </div>
         </div>
       </FilterSection>
 
       <FilterSection title="Price Range" section="price">
         <div className="space-y-4">
-          <div className="px-2">
-            <Slider
-              value={localPriceRange}
-              onValueChange={handlePriceRangeChange}
-              max={10000}
-              min={0}
-              step={100}
-              className="w-full"
+          <div className="flex items-center space-x-2 mb-3">
+            <Checkbox
+              id="use-price-filter"
+              checked={filters.usePriceRangeFilter}
+              onCheckedChange={handlePriceRangeFilterToggle}
             />
+            <Label htmlFor="use-price-filter" className="text-sm font-medium">
+              Filter by price range
+            </Label>
           </div>
-          <div className="flex justify-between text-sm text-muted-foreground">
-            <span>${localPriceRange[0].toLocaleString()}</span>
-            <span>${localPriceRange[1].toLocaleString()}</span>
+          <div className="space-y-3">
+            <div className="flex items-center space-x-2">
+              <Input
+                type="number"
+                value={localPriceRange[0]}
+                onChange={(e) => handlePriceRangeChange("min", e.target.value)}
+                onBlur={() => updateFilter("priceRange", localPriceRange)}
+                min="0"
+                max={localPriceRange[1]}
+                className="w-24 text-center"
+                disabled={!filters.usePriceRangeFilter}
+                placeholder="Min"
+              />
+              <span className="text-sm text-muted-foreground">to</span>
+              <Input
+                type="number"
+                value={localPriceRange[1]}
+                onChange={(e) => handlePriceRangeChange("max", e.target.value)}
+                onBlur={() => updateFilter("priceRange", localPriceRange)}
+                min={localPriceRange[0]}
+                max="50000"
+                className="w-24 text-center"
+                disabled={!filters.usePriceRangeFilter}
+                placeholder="Max"
+              />
+              <span className="text-sm text-muted-foreground">USD</span>
+            </div>
           </div>
         </div>
       </FilterSection>

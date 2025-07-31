@@ -114,10 +114,10 @@ export default function ToursListClient({
   const hasClientSideFilters = useMemo(() => {
     return (
       filters.destinations.length > 0 ||
-      filters.duration[0] !== 1 ||
-      filters.duration[1] !== 30 ||
-      filters.priceRange[0] !== 0 ||
-      filters.priceRange[1] !== 10000 ||
+      (filters.useDurationFilter &&
+        (filters.duration[0] !== 1 || filters.duration[1] !== 30)) ||
+      (filters.usePriceRangeFilter &&
+        (filters.priceRange[0] !== 0 || filters.priceRange[1] !== 50000)) ||
       filters.tourTypes.length > 0
     );
   }, [filters]);
@@ -177,28 +177,31 @@ export default function ToursListClient({
     const hasActiveFilters =
       filters.searchQuery ||
       filters.destinations.length > 0 ||
-      filters.duration[0] !== 1 ||
-      filters.duration[1] !== 30 ||
-      filters.priceRange[0] !== 0 ||
-      filters.priceRange[1] !== 10000 ||
+      (filters.useDurationFilter &&
+        (filters.duration[0] !== 1 || filters.duration[1] !== 30)) ||
+      (filters.usePriceRangeFilter &&
+        (filters.priceRange[0] !== 0 || filters.priceRange[1] !== 50000)) ||
       filters.tourTypes.length > 0;
 
-    if (!hasActiveFilters) {
-      return null;
-    }
-
     const total = filteredAndSortedTours.length;
-    const originalTotal = tours.length;
+    const originalTotal = paginationMeta?.total || tours.length;
 
+    // Always show total count, with filtered info when filters are active
     return (
       <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
         <div className="text-sm text-blue-700 dark:text-blue-300">
-          <span className="font-medium">
-            {total} tour{total !== 1 ? "s" : ""} found
-          </span>
-          {total !== originalTotal && (
-            <span className="text-blue-600 dark:text-blue-400 ml-1">
-              (filtered from {originalTotal} total tours)
+          {hasActiveFilters ? (
+            <>
+              <span className="font-medium">
+                {total} tour{total !== 1 ? "s" : ""} found
+              </span>
+              <span className="text-blue-600 dark:text-blue-400 ml-1">
+                (filtered from {originalTotal} total tours)
+              </span>
+            </>
+          ) : (
+            <span className="font-medium">
+              {originalTotal} tour{originalTotal !== 1 ? "s" : ""} available
             </span>
           )}
         </div>
@@ -206,10 +209,13 @@ export default function ToursListClient({
     );
   }, [
     filteredAndSortedTours.length,
+    paginationMeta?.total,
     tours.length,
     filters.searchQuery,
     filters.destinations.length,
+    filters.useDurationFilter,
     filters.duration,
+    filters.usePriceRangeFilter,
     filters.priceRange,
     filters.tourTypes.length,
   ]);
