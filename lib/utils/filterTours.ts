@@ -43,8 +43,8 @@ export function filterTours(
       if (!hasMatchingDestination) return false;
     }
 
-    // Filter by duration
-    if (filters.duration) {
+    // Filter by duration (only if checkbox is checked)
+    if (filters.useDurationFilter && filters.duration) {
       // Handle both string and number experience_duration
       let tourDuration = 0;
       if (typeof tour.experience_duration === "string") {
@@ -61,8 +61,12 @@ export function filterTours(
       }
     }
 
-    // Filter by price range
-    if (filters.priceRange && tour.display_price) {
+    // Filter by price range (only if checkbox is checked)
+    if (
+      filters.usePriceRangeFilter &&
+      filters.priceRange &&
+      tour.display_price
+    ) {
       const tourPrice = parseFloat(tour.display_price);
       if (
         tourPrice < filters.priceRange[0] ||

@@ -110,6 +110,8 @@ export interface FilterState {
   destinations: string[];
   duration: [number, number];
   priceRange: [number, number];
+  useDurationFilter: boolean;
+  usePriceRangeFilter: boolean;
   tourTypes: string[];
   accommodationTypes: string[];
   groupSizes: string[];

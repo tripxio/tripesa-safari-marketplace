@@ -65,6 +65,8 @@ export default function ToursPageClient({ children }: ToursPageClientProps) {
     destinations: [],
     duration: [1, 30],
     priceRange: [0, 10000],
+    useDurationFilter: false,
+    usePriceRangeFilter: false,
     tourTypes: [],
     accommodationTypes: [],
     groupSizes: [],
