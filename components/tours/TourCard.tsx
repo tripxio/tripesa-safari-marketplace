@@ -177,9 +177,9 @@ export default function TourCard({ tour, viewMode }: TourCardProps) {
                 style={{ backgroundImage: `url('${imageUrl}')` }}
               />
             </Link>
-            {/* Price badge positioned absolutely in top right */}
-            <div className="absolute top-3 right-3">
-              <div className="bg-slate-800/95 backdrop-blur-sm text-white px-3 py-1 rounded-full text-sm font-semibold shadow-lg border border-slate-700/50">
+            {/* Price badge positioned absolutely in top left */}
+            <div className="absolute top-2 left-2">
+              <div className="bg-orange-500/95 backdrop-blur-sm text-white px-2 py-1 rounded-full text-xs font-semibold shadow-lg border border-orange-600/50">
                 {price}
               </div>
             </div>
