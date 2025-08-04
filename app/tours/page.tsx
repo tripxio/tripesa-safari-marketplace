@@ -7,6 +7,7 @@ interface ToursPageProps {
   searchParams: Promise<{
     query?: string;
     location?: string;
+    destination?: string;
     order?: string;
     category?: string;
     page?: string;

@@ -101,6 +101,15 @@ export default function ToursPageClient({ children }: ToursPageClientProps) {
     setAutoSelectedDestinations([]);
   };
 
+  // Handle destination parameter from URL (e.g., from destinations page)
+  useEffect(() => {
+    const destinationParam = searchParams.get("destination");
+    if (destinationParam && filters.destinations.length === 0) {
+      // Preselect the destination from URL parameter
+      manuallyPreselectDestination(destinationParam);
+    }
+  }, [searchParams, manuallyPreselectDestination, filters.destinations.length]);
+
   // Debounced URL updates to prevent excessive API calls
   const urlUpdateTimeoutRef = useRef<any>(undefined);
 
