@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { toast } from "sonner";
-import { Wifi, WifiOff, Download, RefreshCw, X } from "lucide-react";
+// Button, Download, X are no longer needed as the banner is removed.
 
 interface ServiceWorkerMessage {
   type: string;
@@ -10,295 +10,210 @@ interface ServiceWorkerMessage {
   animal?: string;
 }
 
+// Add this type definition to fix the 'workbox' error
+interface CustomWindow extends Window {
+  workbox?: any;
+}
+
+declare const window: CustomWindow;
+
 export default function ServiceWorkerProvider({
   children,
 }: {
   children: React.ReactNode;
 }) {
   const [isOnline, setIsOnline] = useState(true);
+  const [installPrompt, setInstallPrompt] = useState<Event | null>(null);
   const [isInstallable, setIsInstallable] = useState(false);
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
-  const [installPromptDismissed, setInstallPromptDismissed] = useState(false);
+  const [isPwaInstalled, setIsPwaInstalled] = useState(false);
+  const [showOfflineToast, setShowOfflineToast] = useState(false);
+  const toastIdRef = useRef<string | number | null>(null);
 
-  // Check if install prompt was previously dismissed
   useEffect(() => {
-    const dismissed = localStorage.getItem("tripesa-install-dismissed");
-    const dismissedTime = localStorage.getItem(
-      "tripesa-install-dismissed-time"
-    );
+    if (typeof window !== "undefined") {
+      setIsOnline(navigator.onLine);
 
-    if (dismissed === "true" && dismissedTime) {
-      const dismissedAt = new Date(dismissedTime);
-      const now = new Date();
-      const daysSinceDismissed =
-        (now.getTime() - dismissedAt.getTime()) / (1000 * 60 * 60 * 24);
+      if ("serviceWorker" in navigator && window.workbox !== undefined) {
+        const wb = window.workbox;
 
-      // Show again after 7 days
-      if (daysSinceDismissed < 7) {
-        setInstallPromptDismissed(true);
-      } else {
-        // Reset after 7 days
-        localStorage.removeItem("tripesa-install-dismissed");
-        localStorage.removeItem("tripesa-install-dismissed-time");
+        wb.addEventListener("installed", (event: { isUpdate: boolean }) => {
+          if (event.isUpdate) {
+            toast.success("New version available!", {
+              description: "App has been updated. Please refresh.",
+              action: {
+                label: "Refresh",
+                onClick: () => window.location.reload(),
+              },
+              duration: Infinity,
+            });
+          }
+        });
       }
     }
   }, []);
 
-  // Dismiss install prompt
-  const dismissInstallPrompt = (
-    duration: "session" | "week" | "permanent" = "week"
-  ) => {
-    setIsInstallable(false);
-    setInstallPromptDismissed(true);
+  const dismissInstallPrompt = useCallback(
+    (duration: "session" | "week" | "permanent" = "week") => {
+      if (toastIdRef.current) {
+        toast.dismiss(toastIdRef.current);
+        toastIdRef.current = null;
+      }
+      const now = new Date().getTime();
+      let expiryTime: number;
 
-    if (duration === "week" || duration === "permanent") {
-      localStorage.setItem("tripesa-install-dismissed", "true");
-      localStorage.setItem(
-        "tripesa-install-dismissed-time",
-        new Date().toISOString()
-      );
+      switch (duration) {
+        case "week":
+          expiryTime = now + 7 * 24 * 60 * 60 * 1000; // 1 week
+          break;
+        case "permanent":
+          expiryTime = Infinity; // Dismiss permanently
+          break;
+        default: // session
+          expiryTime = -1; // -1 indicates session storage
+          break;
+      }
+
+      if (expiryTime === -1) {
+        sessionStorage.setItem("installPromptDismissed", "true");
+      } else {
+        localStorage.setItem(
+          "installPromptDismissed",
+          JSON.stringify({ expiry: expiryTime })
+        );
+      }
+    },
+    []
+  );
+
+  const handleInstallClick = useCallback(async () => {
+    if (toastIdRef.current) {
+      toast.dismiss(toastIdRef.current);
+      toastIdRef.current = null;
     }
 
-    toast.success("👍 Got it!", {
-      description:
-        duration === "permanent"
-          ? "Install prompt hidden permanently"
-          : duration === "week"
-          ? "Install prompt hidden for 1 week"
-          : "Install prompt hidden for this session",
-      duration: 2000,
-    });
-  };
-
-  // PWA install handler - moved outside useEffect
-  const handleInstallClick = async () => {
-    if (deferredPrompt) {
-      deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
-
+    if (installPrompt && (installPrompt as any).prompt) {
+      (installPrompt as any).prompt();
+      const { outcome } = await (installPrompt as any).userChoice;
       if (outcome === "accepted") {
-        toast.success("🎉 Welcome to Safari Adventures!", {
-          description: "Tripesa is now installed on your device",
-          icon: "🦁",
+        toast.success("Installation successful!", {
+          description: "Tripesa Safari is now installed on your device.",
+        });
+        setIsInstallable(false);
+        setInstallPrompt(null);
+        dismissInstallPrompt("permanent");
+      } else {
+        toast.info("Installation cancelled.", {
+          description: "You can install the app later from the address bar.",
         });
       }
-
-      setDeferredPrompt(null);
-      setIsInstallable(false);
     }
-  };
+  }, [installPrompt, dismissInstallPrompt]);
 
-  useEffect(() => {
-    // Register service worker
-    if ("serviceWorker" in navigator) {
-      navigator.serviceWorker
-        .register("/sw.js")
-        .then((registration) => {
-          console.log(
-            "🦁 Safari Service Worker registered successfully:",
-            registration
-          );
+  const showCustomInstallPrompt = useCallback(() => {
+    if (sessionStorage.getItem("installPromptDismissed")) return;
 
-          // Check for updates
-          registration.addEventListener("updatefound", () => {
-            const newWorker = registration.installing;
-            if (newWorker) {
-              newWorker.addEventListener("statechange", () => {
-                if (
-                  newWorker.state === "installed" &&
-                  navigator.serviceWorker.controller
-                ) {
-                  toast.success("🚀 New safari features available!", {
-                    description: "Refresh to get the latest updates",
-                    action: {
-                      label: "Refresh",
-                      onClick: () => window.location.reload(),
-                    },
-                  });
-                }
-              });
-            }
-          });
-        })
-        .catch((error) => {
-          console.error("❌ Safari Service Worker registration failed:", error);
-        });
-
-      // Listen for service worker messages
-      navigator.serviceWorker.addEventListener("message", (event) => {
-        const data: ServiceWorkerMessage = event.data;
-
-        switch (data.type) {
-          case "TOURS_UPDATED":
-            toast.success(data.message, {
-              description: "Fresh safari data loaded",
-              icon: data.animal,
-              style: {
-                background: "#16a34a",
-                color: "#ffffff",
-                border: "2px solid #22c55e",
-                fontWeight: "600",
-              },
-            });
-            break;
-
-          case "OFFLINE_MODE":
-            toast.info(data.message, {
-              description: "Using cached content",
-              icon: data.animal,
-              style: {
-                background: "#ea580c", // Safari orange
-                color: "#ffffff",
-                border: "3px solid #fb923c",
-                fontWeight: "600",
-                fontSize: "16px",
-              },
-              duration: 6000,
-            });
-            break;
-
-          case "BACK_ONLINE":
-            toast.success(data.message, {
-              description: "All features restored",
-              icon: data.animal,
-              style: {
-                background: "#059669",
-                color: "#ffffff",
-                border: "2px solid #10b981",
-                fontWeight: "600",
-              },
-            });
-            break;
+    const dismissedData = localStorage.getItem("installPromptDismissed");
+    if (dismissedData) {
+      try {
+        const { expiry } = JSON.parse(dismissedData);
+        if (new Date().getTime() < expiry) {
+          return;
         }
-      });
+      } catch (e) {
+        console.error("Error parsing installPromptDismissed data", e);
+      }
     }
 
-    // Handle online/offline status
-    const handleOnline = () => {
-      setIsOnline(true);
-      toast.success("🌐 Connection restored!", {
-        description: "Safari adventures are fully available",
-        icon: "🦁",
-        style: {
-          background: "#065f46", // Dark green background
-          color: "#ffffff",
-          border: "2px solid #10b981",
-          fontWeight: "600",
-        },
-        duration: 4000,
-      });
-    };
+    if (toastIdRef.current) return;
 
-    const handleOffline = () => {
-      setIsOnline(false);
-      toast.warning("📶 You're offline", {
-        description: "Don't worry, cached safaris are still available",
-        icon: "🏕️",
-        style: {
-          background: "#dc2626", // Strong red background
-          color: "#ffffff",
-          border: "3px solid #f87171",
-          fontWeight: "600",
-          fontSize: "16px",
-        },
-        duration: 8000, // Longer duration
-      });
-    };
+    setTimeout(() => {
+      if (toastIdRef.current) return;
 
-    // PWA install prompt
-    const handleBeforeInstallPrompt = (e: Event) => {
-      e.preventDefault();
-
-      // Don't show if already dismissed
-      if (installPromptDismissed) {
-        return;
-      }
-
-      setDeferredPrompt(e);
-      setIsInstallable(true);
-
-      toast.info("📱 Install Tripesa Safari", {
-        description: "Get the full safari experience on your device",
+      toastIdRef.current = toast.message("Install Tripesa Safari App?", {
+        description:
+          "Get a faster, more reliable experience by installing our app.",
+        position: "bottom-right",
+        duration: Infinity,
         action: {
           label: "Install",
-          onClick: handleInstallClick,
+          onClick: () => handleInstallClick(),
         },
         cancel: {
-          label: "Not now",
-          onClick: () => dismissInstallPrompt("session"),
+          label: "Not Now",
+          onClick: () => dismissInstallPrompt("week"),
         },
-        style: {
-          background: "#1e40af", // Strong blue background
-          color: "#ffffff",
-          border: "2px solid #3b82f6",
-          fontWeight: "600",
-        },
-        duration: 10000,
       });
+    }, 8000); // Show prompt after 8 seconds
+  }, [handleInstallClick, dismissInstallPrompt]);
+
+  useEffect(() => {
+    const checkPwaInstalled = async () => {
+      let isInstalled = false;
+      if (window.matchMedia("(display-mode: standalone)").matches) {
+        isInstalled = true;
+      } else if ((navigator as any).getInstalledRelatedApps) {
+        const relatedApps = await (navigator as any).getInstalledRelatedApps();
+        if (relatedApps.length > 0) {
+          isInstalled = true;
+        }
+      }
+      setIsPwaInstalled(isInstalled);
     };
 
-    // Event listeners
-    window.addEventListener("online", handleOnline);
-    window.addEventListener("offline", handleOffline);
+    checkPwaInstalled();
+
+    const handleBeforeInstallPrompt = (e: Event) => {
+      e.preventDefault();
+      setInstallPrompt(e);
+      setIsInstallable(true);
+    };
+
     window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
 
-    // Initial online status
-    setIsOnline(navigator.onLine);
-
     return () => {
-      window.removeEventListener("online", handleOnline);
-      window.removeEventListener("offline", handleOffline);
       window.removeEventListener(
         "beforeinstallprompt",
         handleBeforeInstallPrompt
       );
     };
-  }, [deferredPrompt, handleInstallClick]);
+  }, []);
 
-  return (
-    <>
-      {children}
+  useEffect(() => {
+    if (isInstallable && !isPwaInstalled) {
+      showCustomInstallPrompt();
+    }
+  }, [isInstallable, isPwaInstalled, showCustomInstallPrompt]);
 
-      {/* Offline indicator */}
-      {!isOnline && (
-        <div className="fixed bottom-4 left-4 z-50">
-          <div className="bg-red-600 text-white px-6 py-3 rounded-lg shadow-2xl flex items-center space-x-3 animate-pulse border-2 border-red-400">
-            <WifiOff className="h-5 w-5" />
-            <div>
-              <div className="text-sm font-bold">Offline Mode</div>
-              <div className="text-xs opacity-90">Showing cached content</div>
-            </div>
-          </div>
-        </div>
-      )}
+  useEffect(() => {
+    const handleOnline = () => {
+      setIsOnline(true);
+      if (showOfflineToast) {
+        toast.success("You are back online!", {
+          position: "top-center",
+          duration: 3000,
+        });
+        setShowOfflineToast(false);
+      }
+    };
 
-      {/* Install prompt */}
-      {isInstallable && !installPromptDismissed && (
-        <div className="fixed bottom-4 right-4 z-50">
-          <button
-            onClick={handleInstallClick}
-            className="bg-gradient-to-r from-orange-500 to-amber-500 text-white px-4 py-2 rounded-full shadow-lg flex items-center space-x-2 hover:scale-105 transition-transform"
-          >
-            <Download className="h-4 w-4" />
-            <span className="text-sm font-medium">Install Safari App</span>
-          </button>
-        </div>
-      )}
+    const handleOffline = () => {
+      setIsOnline(false);
+      setShowOfflineToast(true);
+      toast.warning("You are currently offline.", {
+        description: "Some features may not be available.",
+        position: "top-center",
+        duration: 5000,
+      });
+    };
 
-      {/* Dismiss button for install prompt */}
-      {isInstallable && !installPromptDismissed && (
-        <div className="fixed bottom-16 right-4 z-50">
-          <button
-            onClick={() => dismissInstallPrompt("week")}
-            className="bg-gray-200 text-gray-800 px-3 py-1.5 rounded-full text-xs font-medium hover:bg-gray-300 transition-colors flex items-center space-x-1"
-            title="Hide install prompt for 1 week"
-            aria-label="Hide install prompt for 1 week"
-          >
-            <X className="h-3 w-3" />
-            <span>Hide</span>
-          </button>
-        </div>
-      )}
-    </>
-  );
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, [showOfflineToast]);
+
+  return <>{children}</>;
 }
