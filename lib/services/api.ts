@@ -202,8 +202,10 @@ export const submitInquiry = async (
   inquiryData: InquiryRequest
 ): Promise<InquiryResponse> => {
   // Use the base URL without /search for agency endpoints
-  const baseUrl =
-    process.env.NEXT_PUBLIC_API_BASE_URL?.replace("/api/search", "/api");
+  const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(
+    "/api/search",
+    "/api"
+  );
 
   const response = await fetch(`${baseUrl}/agency/${agencySlug}/inquiry`, {
     method: "POST",

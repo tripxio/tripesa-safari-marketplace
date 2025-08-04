@@ -101,6 +101,24 @@ export default function ToursPageClient({ children }: ToursPageClientProps) {
     setAutoSelectedDestinations([]);
   };
 
+  const handleManualSelection = () => {
+    // This function will be called whenever a user manually interacts with the destination filter
+    setAutoSelectedDestinations([]);
+    if (userLocation && locationDetected) {
+      // This will hide the "auto-selected" notification
+      manuallyPreselectDestination();
+    }
+  };
+
+  // Handle destination parameter from URL (e.g., from destinations page)
+  useEffect(() => {
+    const destinationParam = searchParams.get("destination");
+    if (destinationParam && filters.destinations.length === 0) {
+      // Preselect the destination from URL parameter
+      manuallyPreselectDestination();
+    }
+  }, [searchParams, manuallyPreselectDestination, filters.destinations.length]);
+
   // Debounced URL updates to prevent excessive API calls
   const urlUpdateTimeoutRef = useRef<any>(undefined);
 
@@ -355,7 +373,7 @@ export default function ToursPageClient({ children }: ToursPageClientProps) {
                 filters={filters}
                 onFiltersChange={handleFiltersChange}
                 userLocation={userLocation}
-                onManualDestinationSelect={manuallyPreselectDestination}
+                onManualDestinationSelect={handleManualSelection}
                 onDestinationsCleared={clearLocationPreselection}
                 autoSelectedDestinations={autoSelectedDestinations}
               />

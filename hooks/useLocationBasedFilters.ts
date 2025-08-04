@@ -1,6 +1,8 @@
+"use client";
+
 import { useState, useEffect, useRef } from "react";
-import { locationService } from "@/lib/services/locationService";
 import type { FilterState } from "@/lib/types";
+import { LocationService } from "@/lib/services/locationService";
 
 interface UseLocationBasedFiltersProps {
   initialFilters: FilterState;
@@ -11,114 +13,64 @@ export function useLocationBasedFilters({
   initialFilters,
   onFiltersChange,
 }: UseLocationBasedFiltersProps) {
-  const [isDetectingLocation, setIsDetectingLocation] = useState(false);
+  const [isDetectingLocation, setIsDetectingLocation] = useState(true);
   const [locationDetected, setLocationDetected] = useState(false);
   const [userLocation, setUserLocation] = useState<{
     country: string;
     countryCode: string;
     city?: string;
   } | null>(null);
-
-  // Use ref to track if location detection has been attempted to prevent re-runs
-  const hasAttemptedDetection = useRef(false);
-  // Track if user has manually cleared destinations
   const userHasClearedDestinations = useRef(false);
+  const hasAttemptedDetection = useRef(false);
 
   useEffect(() => {
     const detectAndPreselectFilters = async () => {
-      // Skip if we've already attempted detection, if filters are already set, or if user has manually cleared
       if (
         hasAttemptedDetection.current ||
-        initialFilters.destinations.length > 0 ||
-        userHasClearedDestinations.current
+        userHasClearedDestinations.current ||
+        initialFilters.destinations.length > 0
       ) {
+        setIsDetectingLocation(false);
         return;
       }
 
-      // Mark that we've attempted detection
       hasAttemptedDetection.current = true;
-      setIsDetectingLocation(true);
+      const locationService = LocationService.getInstance();
+      const location = await locationService.detectLocation();
+      setUserLocation(location);
 
-      try {
-        const location = await locationService.detectLocation();
+      if (location) {
+        const destination = locationService.getDestinationFromCountry(
+          location.countryCode
+        );
 
-        if (location) {
-          setUserLocation({
-            country: location.country,
-            countryCode: location.countryCode,
-            city: location.city,
-          });
-
-          // Check if user's country matches any of our destinations
-          const destination = locationService.getDestinationFromCountry(
-            location.countryCode
-          );
-
-          if (destination) {
-            // Preselect the destination filter
-            const updatedFilters = {
-              ...initialFilters,
-              destinations: [destination],
-            };
-
-            onFiltersChange(updatedFilters);
-
-            console.log(
-              `📍 Location detected: ${location.country} (${location.countryCode})`
-            );
-            console.log(`🎯 Preselected destination: ${destination}`);
-          } else {
-            console.log(
-              `📍 Location detected: ${location.country} (${location.countryCode}) - no matching destination`
-            );
-          }
-
-          setLocationDetected(true);
-        } else {
-          console.log("📍 Location detection failed - no filters preselected");
+        if (destination && !userHasClearedDestinations.current) {
+          const updatedFilters: FilterState = {
+            ...initialFilters,
+            destinations: [destination],
+          };
+          onFiltersChange(updatedFilters);
           setLocationDetected(true);
         }
-      } catch (error) {
-        console.warn("Location-based filter preselection failed:", error);
-        setLocationDetected(true);
-      } finally {
-        setIsDetectingLocation(false);
       }
+      setIsDetectingLocation(false);
     };
 
-    // Add a small delay to avoid blocking the initial page load
-    const timer = setTimeout(detectAndPreselectFilters, 1000);
-
-    return () => clearTimeout(timer);
-  }, []); // Remove dependencies to prevent re-runs
+    detectAndPreselectFilters();
+  }, []);
 
   const clearLocationPreselection = () => {
-    // Mark that user has manually cleared destinations
     userHasClearedDestinations.current = true;
-
-    // Reset to the initial filter state with empty destinations
-    const updatedFilters = {
+    setLocationDetected(false); // Hide the notification
+    onFiltersChange({
       ...initialFilters,
       destinations: [],
-    };
-    onFiltersChange(updatedFilters);
-
-    // Reset location detection state so notification can be dismissed
-    setLocationDetected(false);
-    setUserLocation(null);
-    // Reset the attempted detection flag so location can be detected again if needed
-    hasAttemptedDetection.current = false;
+    });
   };
 
-  const manuallyPreselectDestination = (destination: string) => {
-    // Reset the cleared flag since user is now manually selecting
-    userHasClearedDestinations.current = false;
-
-    const updatedFilters = {
-      ...initialFilters,
-      destinations: [destination],
-    };
-    onFiltersChange(updatedFilters);
+  const manuallyPreselectDestination = () => {
+    userHasClearedDestinations.current = true;
+    setLocationDetected(false);
   };
 
   return {
