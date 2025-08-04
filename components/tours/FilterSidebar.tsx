@@ -19,7 +19,7 @@ interface FilterSidebarProps {
     countryCode: string;
     city?: string;
   } | null;
-  onManualDestinationSelect?: (destination: string) => void;
+  onManualDestinationSelect?: () => void;
   onDestinationsCleared?: () => void;
   autoSelectedDestinations?: string[]; // Track which destinations were auto-selected
 }
@@ -123,6 +123,29 @@ export default function FilterSidebar({
     },
     [filters]
   );
+
+  const handleManualDestinationChange = (
+    destination: string,
+    isSelected: boolean
+  ) => {
+    const currentDestinations = new Set(filters.destinations);
+    if (isSelected) {
+      currentDestinations.add(destination);
+    } else {
+      currentDestinations.delete(destination);
+    }
+    const newDestinations = Array.from(currentDestinations);
+
+    onFiltersChange({
+      ...filters,
+      destinations: newDestinations,
+    });
+
+    // Manually selecting a destination should clear the "auto-selected" state
+    if (onManualDestinationSelect) {
+      onManualDestinationSelect();
+    }
+  };
 
   const clearAllFilters = () => {
     setLocalDuration([1, 30]);
@@ -235,28 +258,7 @@ export default function FilterSidebar({
                   id={destination}
                   checked={isChecked}
                   onCheckedChange={(checked) => {
-                    const currentDestinations = new Set(filters.destinations);
-                    if (checked) {
-                      currentDestinations.add(destination);
-                    } else {
-                      currentDestinations.delete(destination);
-                    }
-                    const newDestinations = Array.from(currentDestinations);
-                    updateFilter("destinations", newDestinations);
-
-                    // Manually selecting a destination should clear the "auto-selected" state
-                    // unless the selection results in the exact same auto-selected list
-                    const isManualSelection =
-                      JSON.stringify(newDestinations.sort()) !==
-                      JSON.stringify(autoSelectedDestinations.sort());
-
-                    if (onManualDestinationSelect && isManualSelection) {
-                      onManualDestinationSelect(destination);
-                    }
-
-                    if (newDestinations.length === 0 && onDestinationsCleared) {
-                      onDestinationsCleared();
-                    }
+                    handleManualDestinationChange(destination, !!checked);
                   }}
                 />
                 <Label htmlFor={destination} className="text-sm flex-1">
