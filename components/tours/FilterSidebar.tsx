@@ -235,28 +235,27 @@ export default function FilterSidebar({
                   id={destination}
                   checked={isChecked}
                   onCheckedChange={(checked) => {
+                    const currentDestinations = new Set(filters.destinations);
                     if (checked) {
-                      updateFilter("destinations", [
-                        ...filters.destinations,
-                        destination,
-                      ]);
-                      // Notify that user manually selected a destination
-                      if (onManualDestinationSelect) {
-                        onManualDestinationSelect(destination);
-                      }
+                      currentDestinations.add(destination);
                     } else {
-                      const newDestinations = filters.destinations.filter(
-                        (d) => d !== destination
-                      );
-                      updateFilter("destinations", newDestinations);
+                      currentDestinations.delete(destination);
+                    }
+                    const newDestinations = Array.from(currentDestinations);
+                    updateFilter("destinations", newDestinations);
 
-                      // If user unchecked an auto-selected destination or all destinations, reset location-based state
-                      if (
-                        isAutoSelected ||
-                        (newDestinations.length === 0 && onDestinationsCleared)
-                      ) {
-                        onDestinationsCleared?.();
-                      }
+                    // Manually selecting a destination should clear the "auto-selected" state
+                    // unless the selection results in the exact same auto-selected list
+                    const isManualSelection =
+                      JSON.stringify(newDestinations.sort()) !==
+                      JSON.stringify(autoSelectedDestinations.sort());
+
+                    if (onManualDestinationSelect && isManualSelection) {
+                      onManualDestinationSelect(destination);
+                    }
+
+                    if (newDestinations.length === 0 && onDestinationsCleared) {
+                      onDestinationsCleared();
                     }
                   }}
                 />
