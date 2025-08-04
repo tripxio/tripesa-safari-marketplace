@@ -62,8 +62,13 @@ export default function TourCard({ tour, viewMode }: TourCardProps) {
       viewMode === "grid" ? "tour_card_grid" : "tour_card_list"
     );
 
-    // Navigate to tour details
-    router.push(tourUrl);
+    // Navigate to tour details in a new tab
+    window.open(tourUrl, "_blank");
+
+    // Reset the navigating state after a short delay as the page doesn't unload
+    setTimeout(() => {
+      setIsNavigating(false);
+    }, 1000);
   };
 
   const descriptionElement = tour.short_description && (
@@ -94,7 +99,7 @@ export default function TourCard({ tour, viewMode }: TourCardProps) {
         <Card className="overflow-hidden hover:shadow-lg transition-all duration-300">
           <div className="flex flex-col md:flex-row">
             <div className="relative md:w-80 h-64 md:h-auto">
-              <Link href={tourUrl}>
+              <Link href={tourUrl} target="_blank" rel="noopener noreferrer">
                 <div
                   className="w-full h-full bg-cover bg-center"
                   style={{ backgroundImage: `url('${imageUrl}')` }}
@@ -106,8 +111,15 @@ export default function TourCard({ tour, viewMode }: TourCardProps) {
                 <div>
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex-1">
-                      <Link href={tourUrl}>
-                        <h3 className="text-xl font-bold text-gray-900 dark:text-white hover:text-orange-500 transition-colors mb-2">
+                      <Link
+                        href={tourUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <h3
+                          className="text-xl font-bold text-gray-900 dark:text-white hover:text-orange-500 transition-colors mb-2 truncate"
+                          title={tour.title}
+                        >
                           {tour.title}
                         </h3>
                       </Link>
@@ -169,9 +181,9 @@ export default function TourCard({ tour, viewMode }: TourCardProps) {
           </div>
         </Card>
       ) : (
-        <Card className="group overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-2 flex flex-col">
+        <Card className="group overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-2 flex flex-col h-full">
           <div className="relative">
-            <Link href={tourUrl}>
+            <Link href={tourUrl} target="_blank" rel="noopener noreferrer">
               <div
                 className="h-64 bg-cover bg-center"
                 style={{ backgroundImage: `url('${imageUrl}')` }}
@@ -185,59 +197,60 @@ export default function TourCard({ tour, viewMode }: TourCardProps) {
             </div>
           </div>
 
-          <CardContent className="p-6 flex-1 flex flex-col">
-            <div className="flex-1">
-              <div className="flex items-start justify-between mb-3">
-                <div className="flex-1">
-                  <Link href={tourUrl}>
-                    <h3 className="text-lg font-bold text-gray-900 dark:text-white hover:text-orange-500 transition-colors mb-2">
-                      {tour.title}
-                    </h3>
-                  </Link>
-                  <div className="flex items-center text-gray-600 dark:text-gray-400 mb-2">
-                    <MapPin className="h-4 w-4 mr-1" />
-                    <span className="text-sm">{tour.city}</span>
-                  </div>
-                </div>
-              </div>
-
-              {descriptionElement}
-
-              <div className="flex flex-wrap gap-2 mb-4">
-                {/* Commented out tags until they become global variables
-                {tour.package_tags &&
-                  tour.package_tags.length > 0 &&
-                  tour.package_tags.map((tag, index) => (
-                    <Badge
-                      key={index}
-                      variant="secondary"
-                      className="bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300"
-                    >
-                      {tag}
-                    </Badge>
-                  ))}
-                */}
-                {tour.featured && (
-                  <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">
-                    Featured
-                  </Badge>
-                )}
+          <CardContent className="p-4 flex flex-col flex-1">
+            <div className="flex-1 min-w-0">
+              <Link href={tourUrl} target="_blank" rel="noopener noreferrer">
+                <h3
+                  className="text-lg font-bold text-gray-900 dark:text-white hover:text-orange-500 transition-colors mb-2 truncate"
+                  title={tour.title}
+                >
+                  {tour.title}
+                </h3>
+              </Link>
+              <div className="flex items-center text-gray-600 dark:text-gray-400 mb-2">
+                <MapPin className="h-4 w-4 mr-2" />
+                <span className="text-sm">{tour.city}</span>
               </div>
             </div>
 
-            <div className="flex items-center justify-between mt-auto">
-              <TourOperatorInfo agencyId={tour.agency_id} />
-              <Button
-                className="bg-orange-500 hover:bg-orange-600 text-white"
-                onClick={handleViewDetails}
-                disabled={isNavigating}
-              >
-                {isNavigating ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  "View Details"
-                )}
-              </Button>
+            {descriptionElement}
+
+            <div className="flex flex-wrap gap-2 mb-4">
+              {/* Commented out tags until they become global variables
+              {tour.package_tags &&
+                tour.package_tags.length > 0 &&
+                tour.package_tags.map((tag, index) => (
+                  <Badge
+                    key={index}
+                    variant="secondary"
+                    className="bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300"
+                  >
+                    {tag}
+                  </Badge>
+                ))}
+              */}
+              {tour.featured && (
+                <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">
+                  Featured
+                </Badge>
+              )}
+            </div>
+
+            <div className="mt-auto pt-4">
+              <div className="flex items-center justify-between">
+                <TourOperatorInfo agencyId={tour.agency_id} />
+                <Button
+                  className="bg-orange-500 hover:bg-orange-600 text-white"
+                  onClick={handleViewDetails}
+                  disabled={isNavigating}
+                >
+                  {isNavigating ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    "View Details"
+                  )}
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>

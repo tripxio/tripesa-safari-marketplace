@@ -15,14 +15,17 @@ import {
   X,
   Mail,
   Phone,
+  Briefcase,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
-import type { TourPackage } from "@/lib/types";
+import type { Agency, TourPackage } from "@/lib/types";
 import InquiryModal from "@/components/tours/InquiryModal";
+import { getAgency } from "@/lib/services/api";
+import { motion } from "framer-motion";
 
 interface TourDetailClientProps {
   tour: TourPackage;
@@ -36,6 +39,9 @@ export default function TourDetailClient({ tour }: TourDetailClientProps) {
   const [imageLoadingStates, setImageLoadingStates] = useState<
     Record<number, boolean>
   >({});
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [agency, setAgency] = useState<Agency | null>(null);
+  const [loadingAgency, setLoadingAgency] = useState(true);
   // const [isWishlisted, setIsWishlisted] = useState(false); // Commented out for future use
 
   const images =
@@ -71,6 +77,26 @@ export default function TourDetailClient({ tour }: TourDetailClientProps) {
       }
     }
   }, [currentImageIndex, images, imageLoadingStates]);
+
+  useEffect(() => {
+    const fetchAgencyDetails = async () => {
+      if (tour.agency_id) {
+        try {
+          setLoadingAgency(true);
+          const response = await getAgency(tour.agency_id);
+          setAgency(response.data);
+        } catch (error) {
+          console.error("Failed to fetch agency details:", error);
+        } finally {
+          setLoadingAgency(false);
+        }
+      } else {
+        setLoadingAgency(false);
+      }
+    };
+
+    fetchAgencyDetails();
+  }, [tour.agency_id]);
 
   const price = tour.display_price
     ? new Intl.NumberFormat("en-US", {
@@ -172,7 +198,10 @@ export default function TourDetailClient({ tour }: TourDetailClientProps) {
   return (
     <div className="min-h-screen bg-background">
       {/* Hero Section with Image Gallery */}
-      <div className="relative h-[60vh] md:h-[70vh] bg-gray-900">
+      <div
+        className="relative h-[60vh] md:h-[70vh] text-white overflow-hidden group cursor-pointer"
+        onClick={() => openLightbox(currentImageIndex)}
+      >
         {images.length > 0 && (
           <>
             {/* Loading skeleton */}
@@ -275,15 +304,38 @@ export default function TourDetailClient({ tour }: TourDetailClientProps) {
                 <h1 className="text-3xl md:text-5xl font-bold text-white mb-4">
                   {tour.title}
                 </h1>
-                <div className="flex items-center space-x-4 text-white/90">
+
+                <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-white/90 mt-4">
                   <div className="flex items-center space-x-1">
                     <Clock className="h-4 w-4" />
-                    <span>{tour.experience_duration} days</span>
+                    <span>
+                      {tour.experience_duration
+                        ? `${tour.experience_duration} days`
+                        : "N/A"}
+                    </span>
                   </div>
-                  <div className="flex items-center space-x-1">
-                    <Users className="h-4 w-4" />
-                    <span>Per {tour.unit?.name || "Person"}</span>
-                  </div>
+                  {loadingAgency ? (
+                    <div className="h-5 bg-white/20 rounded-md w-48 animate-pulse"></div>
+                  ) : (
+                    agency && (
+                      <div className="flex items-center space-x-2">
+                        <Briefcase className="h-4 w-4" />
+                        <span>Offered By:</span>
+                        {agency.url ? (
+                          <a
+                            href={agency.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="hover:text-orange-300 transition-colors underline font-semibold"
+                          >
+                            {agency.name}
+                          </a>
+                        ) : (
+                          <span className="font-semibold">{agency.name}</span>
+                        )}
+                      </div>
+                    )
+                  )}
                 </div>
               </div>
 
