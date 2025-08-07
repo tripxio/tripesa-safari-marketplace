@@ -684,86 +684,68 @@ export default function TourDetailClient({ tour }: TourDetailClientProps) {
             <div className="sticky top-8">
               <Card className="shadow-lg">
                 <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="text-3xl font-bold text-gray-900 dark:text-white">
-                        {price}
-                      </div>
-                      <div className="text-muted-foreground">
-                        per {tour.unit?.name?.toLowerCase() || "person"}
-                      </div>
-                    </div>
-                    <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">
-                      Available
-                    </Badge>
-                  </div>
+                  <CardTitle className="text-2xl">
+                    {tour.display_price ? (
+                      <>
+                        <span className="font-bold">{price}</span>
+                        <span className="text-sm font-normal text-muted-foreground">
+                          / per {tour.unit?.name || "person"}
+                        </span>
+                      </>
+                    ) : (
+                      "Price On Request"
+                    )}
+                  </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-6">
                   <Separator />
-
-                  {/* Action Buttons */}
-                  <div className="space-y-3">
-                    <Button
-                      onClick={handleBookNow}
-                      className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3"
-                      size="lg"
-                      disabled={tour.disable_booking}
-                    >
-                      {tour.disable_booking
-                        ? "Booking Unavailable"
-                        : "Book Now"}
-                    </Button>
-
-                    <Button
-                      onClick={handleInquire}
-                      variant="outline"
-                      className="w-full border-orange-500 text-orange-500 hover:bg-orange-50 dark:border-orange-400 dark:text-orange-400 dark:hover:bg-orange-900/20 font-semibold py-3"
-                      size="lg"
-                    >
-                      Send Inquiry
-                    </Button>
-                  </div>
-
-                  <Separator />
-
-                  {/* Tour Operator Info */}
                   <div className="space-y-3">
                     <h4 className="font-semibold">Tour Operator</h4>
-                    <div className="flex items-center space-x-3">
-                      <div className="h-12 w-12 bg-orange-100 rounded-full flex items-center justify-center">
-                        <Users className="h-6 w-6 text-orange-500" />
+                    {loadingAgency ? (
+                      <div className="space-y-2">
+                        <div className="h-5 bg-gray-200 rounded-md w-3/4 animate-pulse dark:bg-gray-700"></div>
+                        <div className="h-4 bg-gray-200 rounded-md w-1/2 animate-pulse dark:bg-gray-700"></div>
                       </div>
+                    ) : agency ? (
                       <div>
-                        <div className="font-medium dark:text-white">
-                          Safari Expert
-                        </div>
-                        <div className="text-sm text-muted-foreground dark:text-gray-400">
-                          Verified Operator
-                        </div>
+                        <p className="font-bold text-lg text-primary">
+                          {agency.name}
+                        </p>
+                        {agency.url && (
+                          <a
+                            href={agency.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-sm text-muted-foreground hover:text-primary transition-colors underline"
+                          >
+                            View website
+                          </a>
+                        )}
                       </div>
-                    </div>
-
-                    <div className="flex space-x-2">
-                      <Button variant="outline" size="sm" className="flex-1">
-                        <Mail className="h-4 w-4 mr-2" />
-                        Email
-                      </Button>
-                      <Button variant="outline" size="sm" className="flex-1">
-                        <Phone className="h-4 w-4 mr-2" />
-                        Call
-                      </Button>
-                    </div>
+                    ) : (
+                      <p className="text-muted-foreground">
+                        Information not available
+                      </p>
+                    )}
                   </div>
-
                   <Separator />
+                  <Button
+                    onClick={handleBookNow}
+                    className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3"
+                    size="lg"
+                    disabled={tour.disable_booking}
+                  >
+                    {tour.disable_booking ? "Booking Unavailable" : "Book Now"}
+                  </Button>
 
-                  {/* Safety & Policies */}
-                  <div className="space-y-2 text-sm text-muted-foreground dark:text-gray-400">
-                    <p>✓ Free cancellation up to 24 hours</p>
-                    <p>✓ Secure payment processing</p>
-                    <p>✓ 24/7 customer support</p>
-                    <p>✓ Best price guarantee</p>
-                  </div>
+                  <Button
+                    onClick={handleInquire}
+                    variant="outline"
+                    className="w-full border-orange-500 text-orange-500 hover:bg-orange-50 dark:border-orange-400 dark:text-orange-400 dark:hover:bg-orange-900/20 font-semibold py-3"
+                    size="lg"
+                  >
+                    Send Inquiry
+                  </Button>
                 </CardContent>
               </Card>
             </div>
