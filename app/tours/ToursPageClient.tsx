@@ -54,6 +54,8 @@ export default function ToursPageClient({ children }: ToursPageClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
+  const initialDestination = searchParams.get("destination");
+
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [showFilters, setShowFilters] = useState(false);
   const [sortBy, setSortBy] = useState(searchParams.get("order") || "latest");
@@ -62,7 +64,7 @@ export default function ToursPageClient({ children }: ToursPageClientProps) {
   >([]);
   const [filters, setFilters] = useState<FilterState>({
     searchQuery: searchParams.get("query") || "",
-    destinations: [],
+    destinations: initialDestination ? [initialDestination] : [],
     duration: [1, 30],
     priceRange: [0, 50000],
     useDurationFilter: false,
@@ -109,15 +111,6 @@ export default function ToursPageClient({ children }: ToursPageClientProps) {
       manuallyPreselectDestination();
     }
   };
-
-  // Handle destination parameter from URL (e.g., from destinations page)
-  useEffect(() => {
-    const destinationParam = searchParams.get("destination");
-    if (destinationParam && filters.destinations.length === 0) {
-      // Preselect the destination from URL parameter
-      manuallyPreselectDestination();
-    }
-  }, [searchParams, manuallyPreselectDestination, filters.destinations.length]);
 
   // Debounced URL updates to prevent excessive API calls
   const urlUpdateTimeoutRef = useRef<any>(undefined);
