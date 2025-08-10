@@ -38,6 +38,8 @@ import {
   CheckCircle,
   AlertCircle,
   RotateCcw,
+  ArrowUp,
+  ArrowDown,
 } from "lucide-react";
 import { toast } from "sonner";
 import { logAdminAction } from "@/lib/firebase/analytics";
@@ -49,7 +51,6 @@ import {
   rollbackBannerToVersion,
   uploadBannerImage,
   deleteBannerImage,
-  getDefaultBannerConfig,
   createAdminUser,
   BannerConfig,
   BannerVersion,
@@ -57,6 +58,7 @@ import {
   BannerText,
   BannerSettings,
 } from "@/lib/firebase/config-service";
+import Link from "next/link";
 
 export default function BannerManager() {
   const { adminUser } = useAuth();
@@ -83,20 +85,22 @@ export default function BannerManager() {
       setIsLoading(true);
       const bannerConfig = await getBannerConfig();
       if (bannerConfig) {
-        setConfig(bannerConfig);
+        // Ensure images are properly ordered
+        const configWithOrderedImages = {
+          ...bannerConfig,
+          images: reorderImages(bannerConfig.images),
+        };
+        setConfig(configWithOrderedImages);
       } else {
-        // Initialize with defaults if no config exists
-        const defaultConfig = getDefaultBannerConfig();
-        setConfig({
-          ...defaultConfig,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          version: 1,
-        });
+        toast.error(
+          "No banner configuration found. Please contact administrator."
+        );
+        setConfig(null);
       }
     } catch (error) {
       console.error("Error loading banner config:", error);
       toast.error("Failed to load banner configuration");
+      setConfig(null);
     } finally {
       setIsLoading(false);
     }
@@ -211,7 +215,7 @@ export default function BannerManager() {
         prev
           ? {
               ...prev,
-              images: [...prev.images, newImage],
+              images: reorderImages([...prev.images, newImage]),
             }
           : null
       );
@@ -244,7 +248,7 @@ export default function BannerManager() {
       prev
         ? {
             ...prev,
-            images: [...prev.images, newImage],
+            images: reorderImages([...prev.images, newImage]),
           }
         : null
     );
@@ -264,11 +268,20 @@ export default function BannerManager() {
         await deleteBannerImage(image.url, image.storagePath);
       }
 
+      // Filter out the deleted image and reorder remaining images
+      const remainingImages = config.images
+        .filter((img) => img.id !== id)
+        .sort((a, b) => a.order - b.order) // Ensure proper order before reordering
+        .map((img, index) => ({
+          ...img,
+          order: index + 1, // Reorder starting from 1
+        }));
+
       setConfig((prev) =>
         prev
           ? {
               ...prev,
-              images: prev.images.filter((img) => img.id !== id),
+              images: remainingImages,
             }
           : null
       );
@@ -280,6 +293,50 @@ export default function BannerManager() {
       console.error("Error deleting image:", error);
       toast.error("Failed to delete image");
     }
+  };
+
+  // Helper function to reorder images
+  const reorderImages = (images: BannerImage[]): BannerImage[] => {
+    return images
+      .sort((a, b) => a.order - b.order)
+      .map((img, index) => ({
+        ...img,
+        order: index + 1,
+      }));
+  };
+
+  // Enhanced function to move image up/down
+  const handleMoveImage = (id: string, direction: "up" | "down") => {
+    if (!config) return;
+
+    const currentImages = [...config.images].sort((a, b) => a.order - b.order);
+    const currentIndex = currentImages.findIndex((img) => img.id === id);
+
+    if (currentIndex === -1) return;
+
+    const newIndex = direction === "up" ? currentIndex - 1 : currentIndex + 1;
+
+    // Check bounds
+    if (newIndex < 0 || newIndex >= currentImages.length) return;
+
+    // Swap positions
+    [currentImages[currentIndex], currentImages[newIndex]] = [
+      currentImages[newIndex],
+      currentImages[currentIndex],
+    ];
+
+    // Reorder all images to ensure continuous ordering
+    const reorderedImages = reorderImages(currentImages);
+
+    setConfig((prev) =>
+      prev
+        ? {
+            ...prev,
+            images: reorderedImages,
+          }
+        : null
+    );
+    setHasUnsavedChanges(true);
   };
 
   const handleUpdateImage = (id: string, updates: Partial<BannerImage>) => {
@@ -389,6 +446,36 @@ export default function BannerManager() {
             </CardContent>
           </Card>
         </div>
+      </div>
+    );
+  }
+
+  // Handle case where config is null
+  if (!config) {
+    return (
+      <div className="space-y-6">
+        <Card className="dark:bg-gray-800 dark:border-gray-700">
+          <CardContent className="p-8 text-center">
+            <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+              No Banner Configuration Found
+            </h3>
+            <p className="text-gray-600 dark:text-gray-400 mb-4">
+              The banner configuration could not be loaded. This might be a
+              temporary issue.
+            </p>
+            <Button onClick={loadBannerConfig} className="mr-2">
+              <RotateCcw className="h-4 w-4 mr-2" />
+              Retry
+            </Button>
+            <Link href="/admin">
+              <Button variant="outline">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to Admin
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -564,77 +651,103 @@ export default function BannerManager() {
 
                 {/* Image List */}
                 <div className="space-y-4">
-                  {config?.images.map((image, index) => (
-                    <Card
-                      key={image.id}
-                      className="relative dark:bg-gray-700 dark:border-gray-600"
-                    >
-                      <CardContent className="p-4">
-                        <div className="flex items-center space-x-4">
-                          <div className="relative">
-                            <img
-                              src={image.url}
-                              alt={image.alt}
-                              className="w-20 h-16 object-cover rounded"
-                            />
-                            <div className="absolute -top-2 -left-2 bg-orange-500 text-white text-xs px-2 py-1 rounded">
-                              {image.order}
+                  {config?.images
+                    .sort((a, b) => a.order - b.order)
+                    .map((image, index) => (
+                      <Card
+                        key={image.id}
+                        className="relative dark:bg-gray-700 dark:border-gray-600"
+                      >
+                        <CardContent className="p-4">
+                          <div className="flex items-center space-x-4">
+                            <div className="relative">
+                              <img
+                                src={image.url}
+                                alt={image.alt}
+                                className="w-20 h-16 object-cover rounded"
+                              />
+                              <div className="absolute -top-2 -left-2 bg-orange-500 text-white text-xs px-2 py-1 rounded">
+                                {image.order}
+                              </div>
+                              {image.isUploaded && (
+                                <Badge
+                                  variant="secondary"
+                                  className="absolute -top-2 -right-2 text-xs"
+                                >
+                                  Uploaded
+                                </Badge>
+                              )}
                             </div>
-                            {image.isUploaded && (
-                              <Badge
-                                variant="secondary"
-                                className="absolute -top-2 -right-2 text-xs"
+                            <div className="flex-1 space-y-2">
+                              <Input
+                                placeholder="Image alt text"
+                                value={image.alt}
+                                onChange={(e) =>
+                                  handleUpdateImage(image.id, {
+                                    alt: e.target.value,
+                                  })
+                                }
+                                className="text-sm dark:bg-gray-600 dark:border-gray-500 dark:text-white"
+                              />
+                              <Input
+                                placeholder="Title (optional)"
+                                value={image.title || ""}
+                                onChange={(e) =>
+                                  handleUpdateImage(image.id, {
+                                    title: e.target.value,
+                                  })
+                                }
+                                className="text-sm dark:bg-gray-600 dark:border-gray-500 dark:text-white"
+                              />
+                              <Textarea
+                                placeholder="Description (optional)"
+                                value={image.description || ""}
+                                onChange={(e) =>
+                                  handleUpdateImage(image.id, {
+                                    description: e.target.value,
+                                  })
+                                }
+                                className="text-sm dark:bg-gray-600 dark:border-gray-500 dark:text-white"
+                                rows={2}
+                              />
+                            </div>
+                            <div className="flex flex-col space-y-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleDeleteImage(image.id)}
                               >
-                                Uploaded
-                              </Badge>
-                            )}
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleMoveImage(image.id, "up")}
+                                disabled={index === 0}
+                              >
+                                <ArrowUp className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() =>
+                                  handleMoveImage(image.id, "down")
+                                }
+                                disabled={
+                                  index ===
+                                  config.images.sort(
+                                    (a, b) => a.order - b.order
+                                  ).length -
+                                    1
+                                }
+                              >
+                                <ArrowDown className="h-4 w-4" />
+                              </Button>
+                            </div>
                           </div>
-                          <div className="flex-1 space-y-2">
-                            <Input
-                              placeholder="Image alt text"
-                              value={image.alt}
-                              onChange={(e) =>
-                                handleUpdateImage(image.id, {
-                                  alt: e.target.value,
-                                })
-                              }
-                              className="text-sm dark:bg-gray-600 dark:border-gray-500 dark:text-white"
-                            />
-                            <Input
-                              placeholder="Title (optional)"
-                              value={image.title || ""}
-                              onChange={(e) =>
-                                handleUpdateImage(image.id, {
-                                  title: e.target.value,
-                                })
-                              }
-                              className="text-sm dark:bg-gray-600 dark:border-gray-500 dark:text-white"
-                            />
-                            <Textarea
-                              placeholder="Description (optional)"
-                              value={image.description || ""}
-                              onChange={(e) =>
-                                handleUpdateImage(image.id, {
-                                  description: e.target.value,
-                                })
-                              }
-                              className="text-sm dark:bg-gray-600 dark:border-gray-500 dark:text-white"
-                              rows={2}
-                            />
-                          </div>
-                          <div className="flex flex-col space-y-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleDeleteImage(image.id)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
+                        </CardContent>
+                      </Card>
+                    ))}
                 </div>
               </CardContent>
             </Card>
