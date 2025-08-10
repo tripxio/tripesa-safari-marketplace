@@ -71,21 +71,21 @@ export default function TourCard({ tour, viewMode }: TourCardProps) {
     }, 1000);
   };
 
-  const descriptionElement = tour.short_description && (
-    <div className="prose prose-sm text-muted-foreground mb-4">
-      <p>{`${plainTextDescription.substring(0, TRUNCATE_LENGTH)}${
-        isLongDescription ? "..." : ""
-      }`}</p>
-      {isLongDescription && (
-        <button
-          onClick={openDescriptionModal}
-          className="text-orange-500 hover:underline font-bold mt-1 inline-block bg-transparent border-none p-0 cursor-pointer"
-        >
-          View More
-        </button>
-      )}
-    </div>
-  );
+  // const descriptionElement = tour.short_description && (
+  //   <div className="prose prose-sm text-muted-foreground mb-4">
+  //     <p>{`${plainTextDescription.substring(0, TRUNCATE_LENGTH)}${
+  //       isLongDescription ? "..." : ""
+  //     }`}</p>
+  //     {isLongDescription && (
+  //       <button
+  //         onClick={openDescriptionModal}
+  //         className="text-orange-500 hover:underline font-bold mt-1 inline-block bg-transparent border-none p-0 cursor-pointer"
+  //       >
+  //         View More
+  //       </button>
+  //     )}
+  //   </div>
+  // );
 
   useEffect(() => {
     // Track tour view when component mounts
@@ -138,7 +138,7 @@ export default function TourCard({ tour, viewMode }: TourCardProps) {
                     </div>
                   </div>
 
-                  {descriptionElement}
+                  {/* {descriptionElement} */}
 
                   <div className="flex flex-wrap gap-2 mb-4">
                     {/* Commented out tags until they become global variables
@@ -213,7 +213,7 @@ export default function TourCard({ tour, viewMode }: TourCardProps) {
               </div>
             </div>
 
-            {descriptionElement}
+            {/* {descriptionElement} */}
 
             <div className="flex flex-wrap gap-2 mb-4">
               {/* Commented out tags until they become global variables
