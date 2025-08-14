@@ -7,12 +7,26 @@ import { usePathname } from "next/navigation";
 import { User, Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ThemeToggle from "@/components/common/ThemeToggle";
+import { useRouter } from "next/navigation";
 
 export default function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const router = useRouter();
   const pathname = usePathname();
   const isHomePage = pathname === "/";
+
+  const logoUrl = process.env.NEXT_PUBLIC_LOGO_URL || "/logo.png";
+  const whitelabelName =
+    process.env.NEXT_PUBLIC_WHITELABEL_NAME || "Tripesa Safari";
+
+  const navLinks = [
+    { name: "Home", href: "/" },
+    { name: "Tours", href: "/tours" },
+    { name: "Destinations", href: "/destinations" },
+    { name: "About", href: "/about" },
+    { name: "Contact", href: "/contact" },
+  ];
 
   useEffect(() => {
     const handleScroll = () => {
@@ -38,45 +52,28 @@ export default function Header() {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-2">
-            <div className="w-8 h-8 rounded-lg overflow-hidden">
-              <Image
-                src="/logo.png"
-                alt="Tripesa Logo"
-                width={32}
-                height={32}
-              />
-            </div>
+            <Image
+              src={logoUrl}
+              alt={`${whitelabelName} Logo`}
+              width={isScrolled ? 32 : 40}
+              height={isScrolled ? 32 : 40}
+            />
             <span className={`text-2xl font-bold ${textColorClass}`}>
-              Tripesa
+              {whitelabelName}
             </span>
           </Link>
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-8">
-            <Link
-              href="/tours"
-              className={`${textColorClass} hover:text-orange-500 transition-colors`}
-            >
-              Tours
-            </Link>
-            <Link
-              href="/destinations"
-              className={`${textColorClass} hover:text-orange-500 transition-colors`}
-            >
-              Destinations
-            </Link>
-            <Link
-              href="/about"
-              className={`${textColorClass} hover:text-orange-500 transition-colors`}
-            >
-              About
-            </Link>
-            <Link
-              href="/contact"
-              className={`${textColorClass} hover:text-orange-500 transition-colors`}
-            >
-              Contact
-            </Link>
+            {navLinks.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={`${textColorClass} hover:text-orange-500 transition-colors`}
+              >
+                {link.name}
+              </Link>
+            ))}
           </nav>
 
           {/* Desktop Actions */}
@@ -97,9 +94,9 @@ export default function Header() {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             >
-              {isMenuOpen ? (
+              {isMobileMenuOpen ? (
                 <X
                   className={`h-5 w-5 ${
                     isHomePage && !isScrolled ? "text-white" : ""
@@ -117,33 +114,18 @@ export default function Header() {
         </div>
 
         {/* Mobile Menu */}
-        {isMenuOpen && (
+        {isMobileMenuOpen && (
           <div className="md:hidden py-4 border-t bg-background">
             <nav className="flex flex-col space-y-4">
-              <Link
-                href="/tours"
-                className="text-foreground hover:text-orange-500 transition-colors"
-              >
-                Tours
-              </Link>
-              <Link
-                href="/destinations"
-                className="text-foreground hover:text-orange-500 transition-colors"
-              >
-                Destinations
-              </Link>
-              <Link
-                href="/about"
-                className="text-foreground hover:text-orange-500 transition-colors"
-              >
-                About
-              </Link>
-              <Link
-                href="/contact"
-                className="text-foreground hover:text-orange-500 transition-colors"
-              >
-                Contact
-              </Link>
+              {navLinks.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className="text-foreground hover:text-orange-500 transition-colors"
+                >
+                  {link.name}
+                </Link>
+              ))}
               <div className="flex items-center space-x-4 pt-4">
                 <Button variant="ghost" size="icon">
                   <User className="h-5 w-5" />

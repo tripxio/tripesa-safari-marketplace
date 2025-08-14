@@ -24,6 +24,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import type { Agency, TourPackage } from "@/lib/types";
 import InquiryModal from "@/components/tours/InquiryModal";
+import BookingModal from "@/components/tours/BookingModal";
 import { getAgency } from "@/lib/services/api";
 import { motion } from "framer-motion";
 
@@ -34,6 +35,7 @@ interface TourDetailClientProps {
 export default function TourDetailClient({ tour }: TourDetailClientProps) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isInquiryModalOpen, setIsInquiryModalOpen] = useState(false);
+  const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [lightboxImageIndex, setLightboxImageIndex] = useState(0);
   const [imageLoadingStates, setImageLoadingStates] = useState<
@@ -157,8 +159,8 @@ export default function TourDetailClient({ tour }: TourDetailClientProps) {
   }, [isLightboxOpen, images.length]);
 
   const handleBookNow = () => {
-    // Add booking logic here
-    console.log("Book Now clicked for tour:", tour.slug);
+    // Open booking modal instead of just logging
+    setIsBookingModalOpen(true);
   };
 
   const handleInquire = () => {
@@ -759,6 +761,13 @@ export default function TourDetailClient({ tour }: TourDetailClientProps) {
         onClose={() => setIsInquiryModalOpen(false)}
         tour={tour}
         agencySlug={agencySlug}
+      />
+
+      {/* Booking Modal */}
+      <BookingModal
+        isOpen={isBookingModalOpen}
+        onClose={() => setIsBookingModalOpen(false)}
+        tour={tour}
       />
 
       {/* Lightbox Modal */}

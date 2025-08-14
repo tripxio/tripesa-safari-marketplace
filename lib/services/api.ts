@@ -4,6 +4,8 @@ import type {
   TourPackage,
   InquiryRequest,
   InquiryResponse,
+  BookingRequest,
+  BookingResponse,
 } from "@/lib/types";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -206,17 +208,65 @@ export const submitInquiry = async (
     "/api/search",
     "/api"
   );
+  const whitelabelName = process.env.NEXT_PUBLIC_WHITELABEL_NAME || "Tripesa";
+
+  const inquiryPayload = {
+    ...inquiryData,
+    subject: `New Inquiry from ${whitelabelName} Marketplace`,
+  };
 
   const response = await fetch(`${baseUrl}/agency/${agencySlug}/inquiry`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify(inquiryData),
+    body: JSON.stringify(inquiryPayload),
   });
 
   if (!response.ok) {
     throw new Error(`HTTP error! status: ${response.status}`);
+  }
+
+  return response.json();
+};
+
+// Booking API
+export const submitBooking = async (
+  packageId: number,
+  bookingData: BookingRequest
+): Promise<BookingResponse> => {
+  // Use the base URL without /search for customer endpoints
+  const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(
+    "/api/search",
+    "/api"
+  );
+  const whitelabelName = process.env.NEXT_PUBLIC_WHITELABEL_NAME || "Tripesa";
+
+  // Add with_token=true to ensure we get an agent token for payment fees
+  const bookingPayload = {
+    ...bookingData,
+    with_token: true,
+    source: `${whitelabelName} Marketplace`,
+  };
+
+  const url = new URL(`${baseUrl}/customer/guest/book/${packageId}`);
+  if (bookingPayload.with_token) {
+    url.searchParams.append("with_token", "true");
+  }
+
+  const response = await fetch(url.toString(), {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(bookingPayload),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => null);
+    throw new Error(
+      errorData?.message || `HTTP error! status: ${response.status}`
+    );
   }
 
   return response.json();

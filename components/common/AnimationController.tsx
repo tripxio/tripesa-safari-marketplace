@@ -1,39 +1,39 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
-import TravelMotion from "./TravelMotion";
+import { Suspense } from "react";
+// import TravelMotion from "./TravelMotion";
 
 export default function AnimationController() {
   const pathname = usePathname();
-  const [animationType, setAnimationType] = useState<
-    "plane" | "car" | "bicycle"
-  >("plane");
 
-  // Change animation type based on the current path
-  useEffect(() => {
-    // Set specific animations for specific pages
-    if (pathname.includes("/tours")) {
-      // setAnimationType("car"); // Car animation commented out for tours
-      setAnimationType("plane"); // Using plane animation instead
-    } else if (pathname.includes("/destinations")) {
-      setAnimationType("bicycle");
-    } else {
-      // Use plane for home page and others
-      setAnimationType("plane");
-    }
-  }, [pathname]);
+  // Define on which pages the animations should be shown
+  const isHomePage = pathname === "/";
+  const isToursPage = pathname.startsWith("/tours");
+  const isDestinationsPage = pathname.startsWith("/destinations");
 
-  // Don't render any animation on tours page or admin pages
-  if (pathname.includes("/tours") || pathname.includes("/admin")) {
+  // A simple function to decide if animations should be shown on the current page
+  const showAnimations = () => {
+    return isHomePage || isToursPage || isDestinationsPage;
+  };
+
+  if (!showAnimations()) {
     return null;
   }
 
   return (
-    <TravelMotion
-      type={animationType}
-      position={pathname === "/" ? "bottom-right" : "top-right"}
-      size={pathname === "/" ? "large" : "medium"}
-    />
+    <Suspense fallback={null}>
+      {/* The TravelMotion component is now removed to disable the animation */}
+      {/* <TravelMotion
+        type={isHomePage ? "plane" : isToursPage ? "car" : "bicycle"}
+        position={
+          isHomePage
+            ? "bottom-right"
+            : isToursPage
+            ? "bottom-left"
+            : "top-right"
+        }
+      /> */}
+    </Suspense>
   );
 }
