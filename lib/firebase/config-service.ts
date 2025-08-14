@@ -1,4 +1,5 @@
 import {
+  getFirestore,
   doc,
   getDoc,
   setDoc,
@@ -19,7 +20,7 @@ import {
   getDownloadURL,
   deleteObject,
 } from "firebase/storage";
-import { db, storage } from "./config";
+import { getFirebaseDB, getFirebaseStorage, getFirebaseApp } from "./init"; // Assuming you have this init file
 
 // Site Configuration Types
 export interface ThemeColors {
@@ -127,198 +128,112 @@ export interface ThemeVersion {
   isActive: boolean;
 }
 
-// Enhanced Theme Colors Management
-export const getThemeConfig = async (): Promise<ThemeConfig | null> => {
-  try {
-    const docRef = doc(db, "site-config", "theme-config");
-    const docSnap = await getDoc(docRef);
+// -----------------------------------------------------------------------------
+// Featured Destinations Configuration
+// -----------------------------------------------------------------------------
 
-    if (docSnap.exists()) {
-      const data = docSnap.data();
-      return {
-        ...data,
-        createdAt: data.createdAt?.toDate() || new Date(),
-        updatedAt: data.updatedAt?.toDate() || new Date(),
-      } as ThemeConfig;
-    }
-    return null;
-  } catch (error) {
-    console.error("Error getting theme config:", error);
-    throw error;
-  }
-};
+export interface FeaturedDestination {
+  id: string;
+  title: string;
+  description: string;
+  imageUrl: string;
+  link: string;
+  order: number;
+  isUploaded?: boolean;
+  storagePath?: string;
+}
 
-export const getThemeColors = async (
-  mode: "light" | "dark" = "light"
-): Promise<ThemeColors | null> => {
-  try {
-    const config = await getThemeConfig();
-    if (config) {
-      return config[mode];
-    }
-    return null;
-  } catch (error) {
-    console.error("Error getting theme colors:", error);
-    throw error;
-  }
-};
+/**
+ * Retrieves the featured destinations configuration.
+ * @returns A promise that resolves to an array of featured destinations or null if not found.
+ */
+export const getFeaturedDestinations = async (): Promise<
+  FeaturedDestination[] | null
+> => {
+  const db = getFirebaseDB();
+  const docRef = doc(db, "site-config", "featured-destinations");
+  const docSnap = await getDoc(docRef);
 
-export const saveThemeConfig = async (
-  config: Omit<ThemeConfig, "createdAt" | "updatedAt" | "version">,
-  userId: string,
-  userName: string,
-  description?: string
-): Promise<void> => {
-  try {
-    const currentConfig = await getThemeConfig();
-    const newVersion = (currentConfig?.version || 0) + 1;
-
-    const newConfig: ThemeConfig = {
-      ...config,
-      version: newVersion,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-
-    // Save current config
-    await setDoc(doc(db, "site-config", "theme-config"), newConfig);
-
-    // Save version history
-    const versionDoc: Omit<ThemeVersion, "id"> = {
-      light: config.light,
-      dark: config.dark,
-      createdAt: new Date(),
-      createdBy: userId,
-      createdByName: userName,
-      version: newVersion,
-      description,
-      isActive: true,
-    };
-
-    await addDoc(collection(db, "theme-versions"), versionDoc);
-
-    // Deactivate previous versions
-    if (currentConfig) {
-      const versionsQuery = query(
-        collection(db, "theme-versions"),
-        where("isActive", "==", true),
-        where("version", "!=", newVersion)
-      );
-      const versionsSnapshot = await getDocs(versionsQuery);
-
-      const batch = writeBatch(db);
-      versionsSnapshot.docs.forEach((doc) => {
-        batch.update(doc.ref, { isActive: false });
-      });
-      await batch.commit();
-    }
-  } catch (error) {
-    console.error("Error saving theme config:", error);
-    throw error;
-  }
-};
-
-export const saveThemeColors = async (
-  colors: ThemeColors,
-  mode: "light" | "dark" = "light",
-  userId: string,
-  userName: string,
-  description?: string
-): Promise<void> => {
-  try {
-    const currentConfig = await getThemeConfig();
-    const newConfig = {
-      light:
-        mode === "light" ? colors : currentConfig?.light || getDefaultColors(),
-      dark:
-        mode === "dark"
-          ? colors
-          : currentConfig?.dark || getDefaultDarkColors(),
-      isActive: true,
-      createdBy: userId,
-    };
-
-    await saveThemeConfig(newConfig, userId, userName, description);
-  } catch (error) {
-    console.error("Error saving theme colors:", error);
-    throw error;
-  }
-};
-
-export const getThemeVersions = async (
-  limitCount: number = 10
-): Promise<ThemeVersion[]> => {
-  try {
-    const versionsQuery = query(
-      collection(db, "theme-versions"),
-      orderBy("createdAt", "desc"),
-      limit(limitCount)
+  if (docSnap.exists()) {
+    const data = docSnap.data();
+    // Assuming the destinations are stored in a 'destinations' field.
+    return (data.destinations as FeaturedDestination[]).sort(
+      (a, b) => a.order - b.order
     );
-    const snapshot = await getDocs(versionsQuery);
-
-    return snapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-      createdAt: doc.data().createdAt?.toDate() || new Date(),
-    })) as ThemeVersion[];
-  } catch (error) {
-    console.error("Error getting theme versions:", error);
-    throw error;
   }
+  return null;
 };
 
-export const rollbackToVersion = async (
-  versionId: string,
-  userId: string,
-  userName: string
+/**
+ * Saves the featured destinations configuration.
+ * @param destinations - The array of featured destinations to save.
+ * @param userId - The ID of the user performing the action.
+ */
+export const saveFeaturedDestinations = async (
+  destinations: FeaturedDestination[],
+  userId: string
 ): Promise<void> => {
+  const db = getFirebaseDB();
+  const docRef = doc(db, "site-config", "featured-destinations");
+
+  const data = {
+    destinations,
+    updatedAt: new Date(),
+    updatedBy: userId,
+  };
+
+  await setDoc(docRef, data, { merge: true });
+};
+
+/**
+ * Uploads an image for a featured destination to Firebase Storage.
+ * @param file - The image file to upload.
+ * @returns A promise that resolves to the public URL and storage path of the uploaded image.
+ */
+export const uploadFeaturedDestinationImage = async (
+  file: File
+): Promise<{ url: string; storagePath: string }> => {
+  const storage = getFirebaseStorage();
+  const storagePath = `site-assets/featured-destinations/${Date.now()}-${file.name.replace(
+    /\s/g,
+    "_"
+  )}`;
+  const storageRef = ref(storage, storagePath);
+
+  await uploadBytes(storageRef, file);
+  const downloadURL = await getDownloadURL(storageRef);
+
+  return { url: downloadURL, storagePath };
+};
+
+/**
+ * Deletes an image for a featured destination from Firebase Storage.
+ * @param storagePath - The storage path of the image to delete.
+ */
+export const deleteFeaturedDestinationImage = async (
+  storagePath: string
+): Promise<void> => {
+  if (!storagePath) return;
+  const storage = getFirebaseStorage();
+  const imageRef = ref(storage, storagePath);
   try {
-    const versionDoc = await getDoc(doc(db, "theme-versions", versionId));
-    if (!versionDoc.exists()) {
-      throw new Error("Version not found");
+    await deleteObject(imageRef);
+  } catch (error: any) {
+    // It's okay if the file doesn't exist, we can ignore that error.
+    if (error.code !== "storage/object-not-found") {
+      console.error("Error deleting featured destination image:", error);
+      throw error;
     }
-
-    const versionData = versionDoc.data() as ThemeVersion;
-    const newConfig = {
-      light: versionData.light,
-      dark: versionData.dark,
-      isActive: true,
-      createdBy: userId,
-    };
-
-    await saveThemeConfig(
-      newConfig,
-      userId,
-      userName,
-      `Rollback to version ${versionData.version}`
-    );
-  } catch (error) {
-    console.error("Error rolling back theme version:", error);
-    throw error;
   }
 };
 
-export const getDefaultColors = (): ThemeColors => ({
-  primary: "#171717", // 0 0% 9% - matches --primary in light mode
-  secondary: "#f5f5f5", // 0 0% 96.1% - matches --secondary in light mode
-  accent: "#f5f5f5", // 0 0% 96.1% - matches --accent in light mode
-  background: "#F4F3F2", // Updated from pure white to warm off-white
-  text: "#0a0a0a", // 0 0% 3.9% - matches --foreground in light mode
-  muted: "#737373", // 0 0% 45.1% - matches --muted-foreground in light mode
-});
+// -----------------------------------------------------------------------------
+// Banner Configuration
+// -----------------------------------------------------------------------------
 
-export const getDefaultDarkColors = (): ThemeColors => ({
-  primary: "#fafafa", // 0 0% 98% - matches --primary in dark mode
-  secondary: "#262626", // 0 0% 14.9% - matches --secondary in dark mode
-  accent: "#262626", // 0 0% 14.9% - matches --accent in dark mode
-  background: "#0a0a0a", // 0 0% 3.9% - matches --background in dark mode
-  text: "#fafafa", // 0 0% 98% - matches --foreground in dark mode
-  muted: "#a3a3a3", // 0 0% 63.9% - matches --muted-foreground in dark mode
-});
-
-// Enhanced Banner Management
 export const getBannerConfig = async (): Promise<BannerConfig | null> => {
   try {
+    const db = getFirebaseDB();
     const docRef = doc(db, "site-config", "banner-config");
     const docSnap = await getDoc(docRef);
 
@@ -355,7 +270,10 @@ export const saveBannerConfig = async (
     };
 
     // Save current config
-    await setDoc(doc(db, "site-config", "banner-config"), newConfig);
+    await setDoc(
+      doc(getFirebaseDB(), "site-config", "banner-config"),
+      newConfig
+    );
 
     // Save version history
     const versionDoc: Omit<BannerVersion, "id"> = {
@@ -370,18 +288,18 @@ export const saveBannerConfig = async (
       isActive: true,
     };
 
-    await addDoc(collection(db, "banner-versions"), versionDoc);
+    await addDoc(collection(getFirebaseDB(), "banner-versions"), versionDoc);
 
     // Deactivate previous versions
     if (currentConfig) {
       const versionsQuery = query(
-        collection(db, "banner-versions"),
+        collection(getFirebaseDB(), "banner-versions"),
         where("isActive", "==", true),
         where("version", "!=", newVersion)
       );
       const versionsSnapshot = await getDocs(versionsQuery);
 
-      const batch = writeBatch(db);
+      const batch = writeBatch(getFirebaseDB());
       versionsSnapshot.docs.forEach((doc) => {
         batch.update(doc.ref, { isActive: false });
       });
@@ -397,6 +315,7 @@ export const getBannerVersions = async (
   limitCount: number = 10
 ): Promise<BannerVersion[]> => {
   try {
+    const db = getFirebaseDB();
     const versionsQuery = query(
       collection(db, "banner-versions"),
       orderBy("createdAt", "desc"),
@@ -421,6 +340,7 @@ export const rollbackBannerToVersion = async (
   userName: string
 ): Promise<void> => {
   try {
+    const db = getFirebaseDB();
     const versionDoc = await getDoc(doc(db, "banner-versions", versionId));
     if (!versionDoc.exists()) {
       throw new Error("Version not found");
@@ -452,6 +372,7 @@ export const uploadBannerImage = async (
   file: File
 ): Promise<{ url: string; storagePath: string }> => {
   try {
+    const storage = getFirebaseStorage();
     const fileName = `banners/${Date.now()}-${file.name}`;
     const storageRef = ref(storage, fileName);
 
@@ -475,6 +396,7 @@ export const deleteBannerImage = async (
   try {
     if (storagePath) {
       // Delete from Firebase Storage
+      const storage = getFirebaseStorage();
       const storageRef = ref(storage, storagePath);
       await deleteObject(storageRef);
     }
@@ -488,6 +410,7 @@ export const deleteBannerImage = async (
 // Banner Images Management
 export const getBannerImages = async (): Promise<BannerImage[]> => {
   try {
+    const db = getFirebaseDB();
     const docRef = doc(db, "site-config", "banner-images");
     const docSnap = await getDoc(docRef);
 
@@ -506,7 +429,9 @@ export const saveBannerImages = async (
   images: BannerImage[]
 ): Promise<void> => {
   try {
-    await setDoc(doc(db, "site-config", "banner-images"), { images });
+    const db = getFirebaseDB();
+    const docRef = doc(db, "site-config", "banner-images");
+    await setDoc(docRef, { images });
   } catch (error) {
     console.error("Error saving banner images:", error);
     throw error;
@@ -516,6 +441,7 @@ export const saveBannerImages = async (
 // Tile Images Management
 export const getTileImages = async (): Promise<TileImage[]> => {
   try {
+    const db = getFirebaseDB();
     const docRef = doc(db, "site-config", "tile-images");
     const docSnap = await getDoc(docRef);
 
@@ -532,7 +458,9 @@ export const getTileImages = async (): Promise<TileImage[]> => {
 
 export const saveTileImages = async (images: TileImage[]): Promise<void> => {
   try {
-    await setDoc(doc(db, "site-config", "tile-images"), { images });
+    const db = getFirebaseDB();
+    const docRef = doc(db, "site-config", "tile-images");
+    await setDoc(docRef, { images });
   } catch (error) {
     console.error("Error saving tile images:", error);
     throw error;
@@ -541,6 +469,7 @@ export const saveTileImages = async (images: TileImage[]): Promise<void> => {
 
 export const uploadTileImage = async (file: File): Promise<string> => {
   try {
+    const storage = getFirebaseStorage();
     const fileName = `tiles/${Date.now()}-${file.name}`;
     const storageRef = ref(storage, fileName);
 
@@ -561,6 +490,7 @@ export const deleteTileImage = async (imageUrl: string): Promise<void> => {
     const fileName = urlParts[urlParts.length - 1];
     const filePath = `tiles/${fileName}`;
 
+    const storage = getFirebaseStorage();
     const storageRef = ref(storage, filePath);
     await deleteObject(storageRef);
   } catch (error) {
@@ -577,6 +507,7 @@ export const getGeneralSettings = async (): Promise<{
   contactPhone: string;
 } | null> => {
   try {
+    const db = getFirebaseDB();
     const docRef = doc(db, "site-config", "general-settings");
     const docSnap = await getDoc(docRef);
 
@@ -603,7 +534,9 @@ export const saveGeneralSettings = async (settings: {
   contactPhone: string;
 }): Promise<void> => {
   try {
-    await setDoc(doc(db, "site-config", "general-settings"), settings);
+    const db = getFirebaseDB();
+    const docRef = doc(db, "site-config", "general-settings");
+    await setDoc(docRef, settings);
   } catch (error) {
     console.error("Error saving general settings:", error);
     throw error;
@@ -616,6 +549,7 @@ export const createAdminUser = async (
   userName: string
 ): Promise<void> => {
   try {
+    const db = getFirebaseDB();
     const userRef = doc(db, "admin-users", userId);
     const userDoc = await getDoc(userRef);
 
@@ -638,34 +572,145 @@ export const createAdminUser = async (
 // Get all site configuration
 export const getSiteConfig = async (): Promise<SiteConfig> => {
   try {
-    const [themeColors, bannerImages, tileImages, generalSettings] =
-      await Promise.all([
-        getThemeColors(),
-        getBannerImages(),
-        getTileImages(),
-        getGeneralSettings(),
-      ]);
+    const db = getFirebaseDB();
+    // This is a simplified example. You'd likely fetch individual configs.
+    const themeColors = (await getThemeConfig())?.light || getDefaultColors();
+    const bannerImages = (await getBannerImages()) || [];
+    const tileImages = (await getTileImages()) || [];
+    const generalSettings = (await getGeneralSettings()) || {
+      siteName: "Tripesa Safari",
+      siteDescription: "AI-powered safari discovery",
+      contactEmail: "info@tripesa.co",
+      contactPhone: "+256 123 456 789",
+    };
 
     return {
-      themeColors: themeColors || {
-        primary: "#f97316",
-        secondary: "#64748b",
-        accent: "#8b5cf6",
-        background: "#ffffff",
-        text: "#1f2937",
-        muted: "#6b7280",
-      },
-      bannerImages: bannerImages || [],
-      tileImages: tileImages || [],
-      generalSettings: generalSettings || {
-        siteName: "Tripesa Safari",
-        siteDescription: "AI-powered safari discovery",
-        contactEmail: "info@tripesa.co",
-        contactPhone: "+256 123 456 789",
-      },
+      themeColors: themeColors,
+      bannerImages: bannerImages,
+      tileImages: tileImages,
+      generalSettings: generalSettings,
     };
   } catch (error) {
     console.error("Error getting site config:", error);
+    throw error;
+  }
+};
+
+export const getThemeVersions = async (
+  limitCount: number = 10
+): Promise<ThemeVersion[]> => {
+  try {
+    const db = getFirebaseDB();
+    const versionsQuery = query(
+      collection(db, "theme-versions"),
+      orderBy("createdAt", "desc"),
+      limit(limitCount)
+    );
+    const snapshot = await getDocs(versionsQuery);
+
+    return snapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+      createdAt: doc.data().createdAt?.toDate() || new Date(),
+    })) as ThemeVersion[];
+  } catch (error) {
+    console.error("Error getting theme versions:", error);
+    throw error;
+  }
+};
+
+export const getThemeConfig = async (): Promise<ThemeConfig | null> => {
+  const db = getFirebaseDB();
+  const docRef = doc(db, "site-config", "theme-config");
+  const docSnap = await getDoc(docRef);
+
+  if (docSnap.exists()) {
+    return docSnap.data() as ThemeConfig;
+  }
+
+  return null;
+};
+
+export const saveThemeConfig = async (
+  config: Omit<ThemeConfig, "createdAt" | "updatedAt" | "version">,
+  userId: string,
+  userName: string,
+  description?: string
+): Promise<void> => {
+  const db = getFirebaseDB();
+  const currentConfig = await getThemeConfig();
+  const newVersion = (currentConfig?.version || 0) + 1;
+
+  const newConfig: ThemeConfig = {
+    ...config,
+    version: newVersion,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    createdBy: userId,
+  };
+
+  await setDoc(doc(db, "site-config", "theme-config"), newConfig);
+
+  const versionDoc: Omit<ThemeVersion, "id"> = {
+    light: config.light,
+    dark: config.dark,
+    createdAt: new Date(),
+    createdBy: userId,
+    createdByName: userName,
+    version: newVersion,
+    description,
+    isActive: true,
+  };
+
+  await addDoc(collection(db, "theme-versions"), versionDoc);
+};
+
+export const getDefaultColors = (): ThemeColors => ({
+  primary: "#f97316",
+  secondary: "#64748b",
+  accent: "#8b5cf6",
+  background: "#ffffff",
+  text: "#1f2937",
+  muted: "#6b7280",
+});
+
+export const getDefaultDarkColors = (): ThemeColors => ({
+  primary: "#f97316",
+  secondary: "#94a3b8",
+  accent: "#a78bfa",
+  background: "#0f172a",
+  text: "#f1f5f9",
+  muted: "#64748b",
+});
+
+export const rollbackToVersion = async (
+  versionId: string,
+  userId: string,
+  userName: string
+): Promise<void> => {
+  try {
+    const db = getFirebaseDB();
+    const versionDoc = await getDoc(doc(db, "theme-versions", versionId));
+    if (!versionDoc.exists()) {
+      throw new Error("Version not found");
+    }
+
+    const versionData = versionDoc.data() as ThemeVersion;
+    const newConfig = {
+      light: versionData.light,
+      dark: versionData.dark,
+      isActive: true,
+      createdBy: userId,
+    };
+
+    await saveThemeConfig(
+      newConfig,
+      userId,
+      userName,
+      `Rollback to version ${versionData.version}`
+    );
+  } catch (error) {
+    console.error("Error rolling back theme version:", error);
     throw error;
   }
 };
