@@ -66,8 +66,8 @@ export default function HeroSection() {
     { id: "uganda-safaris", text: "Best Safaris in Uganda" },
     { id: "jinja-highlights", text: "Highlights of Jinja" },
     { id: "kidepo-romance", text: "Romantic Trip to Kidepo" },
-    { id: "uganda-best-time", text: "Best time to visit Uganda" },
-    { id: "kibale-itinerary", text: "3 day Kibale Itinerary" },
+    { id: "bwindi-best-time", text: "Best time to visit Bwindi" },
+    { id: "kibale-itinerary", text: "3-day Kibale Itinerary" },
   ];
 
   const handleSuggestionClick = useCallback((text: string) => {
