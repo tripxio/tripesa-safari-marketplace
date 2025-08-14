@@ -208,13 +208,19 @@ export const submitInquiry = async (
     "/api/search",
     "/api"
   );
+  const whitelabelName = process.env.NEXT_PUBLIC_WHITELABEL_NAME || "Tripesa";
+
+  const inquiryPayload = {
+    ...inquiryData,
+    subject: `New Inquiry from ${whitelabelName} Marketplace`,
+  };
 
   const response = await fetch(`${baseUrl}/agency/${agencySlug}/inquiry`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify(inquiryData),
+    body: JSON.stringify(inquiryPayload),
   });
 
   if (!response.ok) {
@@ -234,11 +240,13 @@ export const submitBooking = async (
     "/api/search",
     "/api"
   );
+  const whitelabelName = process.env.NEXT_PUBLIC_WHITELABEL_NAME || "Tripesa";
 
   // Add with_token=true to ensure we get an agent token for payment fees
   const bookingPayload = {
     ...bookingData,
     with_token: true,
+    source: `${whitelabelName} Marketplace`,
   };
 
   const url = new URL(`${baseUrl}/customer/guest/book/${packageId}`);

@@ -129,6 +129,7 @@ export interface InquiryRequest {
   no_of_people: number;
   inquiry_date: string;
   message?: string;
+  subject?: string;
 }
 
 export interface InquiryResponse {
@@ -147,6 +148,7 @@ export interface BookingRequest {
   phone_number: string;
   number_of_people: number;
   with_token?: boolean;
+  source?: string;
 }
 
 export interface BookingResponse {
