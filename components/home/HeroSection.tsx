@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import AISearchInterface from "./AISearchInterface";
 import { logButtonClick } from "@/lib/firebase/analytics";
 import { getBannerConfig, BannerConfig } from "@/lib/firebase/config-service";
+import { Textarea } from "@/components/ui/textarea";
 
 export default function HeroSection() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -61,11 +62,12 @@ export default function HeroSection() {
   ]);
 
   const quickSuggestions = [
-    { id: "gorilla", text: "Best gorilla trekking" },
-    { id: "luxury", text: "Luxury safari packages" },
-    { id: "budget", text: "Budget-friendly tours" },
-    { id: "tanzania", text: "Tanzania wildlife" },
-    { id: "uganda", text: "Uganda adventures" },
+    { id: "kampala-getaway", text: "Weekend Getaway from Kampala" },
+    { id: "uganda-safaris", text: "Best Safaris in Uganda" },
+    { id: "jinja-highlights", text: "Highlights of Jinja" },
+    { id: "kidepo-romance", text: "Romantic Trip to Kidepo" },
+    { id: "uganda-best-time", text: "Best time to visit Uganda" },
+    { id: "kibale-itinerary", text: "3 day Kibale Itinerary" },
   ];
 
   const handleSuggestionClick = useCallback((text: string) => {
@@ -160,37 +162,34 @@ export default function HeroSection() {
         )}
 
         {/* AI Search Interface */}
-        <div className="max-w-2xl mx-auto mb-8">
-          <div className="relative">
-            <div className="flex items-center bg-white/95 backdrop-blur rounded-2xl p-2 shadow-2xl">
-              <Sparkles className="h-6 w-6 text-orange-500 ml-4 mr-3" />
-              <Input
-                placeholder="Ask me anything about safaris, tours, or destinations..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="flex-1 border-none bg-transparent text-lg placeholder:text-gray-500 focus-visible:ring-0"
-                onKeyPress={(e) => {
-                  if (e.key === "Enter" && searchQuery.trim()) {
-                    setShowAISearch(true);
-                  }
-                }}
-                onFocus={() => setShowAISearch(true)}
-              />
-              <Button size="icon" variant="ghost" className="mr-2">
-                <Mic className="h-5 w-5 text-gray-500" />
-              </Button>
-              <Button
-                size="lg"
-                className="bg-orange-500 hover:bg-orange-600 text-white px-8 rounded-xl"
-                onClick={() => {
+        <div className="max-w-2xl mx-auto mb-8 mt-4">
+          <div className="relative group">
+            <Textarea
+              placeholder="Ask me anything about tours, destinations, plans, or things to do"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="bg-white/20 backdrop-blur-lg border border-white/30 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-shadow duration-300 w-full text-lg text-white placeholder:text-gray-200 focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2 resize-none min-h-[120px] pr-20"
+              onKeyPress={(e) => {
+                if (e.key === "Enter" && !e.shiftKey && searchQuery.trim()) {
+                  e.preventDefault();
                   setShowAISearch(true);
-                  logButtonClick("ai_search", "hero_section");
-                }}
-              >
-                <Sparkles className="h-5 w-5 mr-2" />
-                Ask AI
-              </Button>
-            </div>
+                  logButtonClick("ai_search_enter", "hero_section");
+                }
+              }}
+              onFocus={() => setShowAISearch(true)}
+              rows={4}
+            />
+            <Button
+              size="icon"
+              variant="ghost"
+              className="absolute bottom-5 right-5 text-gray-200 hover:text-orange-500 hover:bg-orange-100/50 rounded-full transition-colors duration-200"
+              onClick={() => {
+                setShowAISearch(true);
+                logButtonClick("ai_search_button", "hero_section");
+              }}
+            >
+              <Sparkles className="h-6 w-6" />
+            </Button>
           </div>
         </div>
 
