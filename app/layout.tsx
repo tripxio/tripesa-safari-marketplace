@@ -43,9 +43,9 @@ export const metadata: Metadata = {
     canonical: "/",
   },
   icons: {
-    icon: "/logo.png",
-    shortcut: "/logo.png",
-    apple: "/logo.png",
+    icon: process.env.NEXT_PUBLIC_LOGO_URL || "/logo.png",
+    shortcut: process.env.NEXT_PUBLIC_LOGO_URL || "/logo.png",
+    apple: process.env.NEXT_PUBLIC_LOGO_URL || "/logo.png",
   },
   manifest: "/manifest.json",
   openGraph: {
