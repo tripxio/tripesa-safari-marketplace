@@ -125,28 +125,19 @@ export const getFirebaseApp = () => {
 };
 
 export const getFirebaseAuth = () => {
-  if (!auth) {
-    initializeFirebase();
-  }
-  return auth;
+  return getAuth(getFirebaseApp());
 };
 
 export const getFirebaseDB = () => {
-  if (!db) {
-    initializeFirebase();
-  }
-  return db;
+  return getFirestore(getFirebaseApp());
 };
 
 export const getFirebaseStorage = () => {
-  if (!storage) {
-    initializeFirebase();
-  }
-  return storage;
+  return getStorage(getFirebaseApp());
 };
 
 export const getFirebaseAnalytics = () => {
-  if (!analytics && typeof window !== "undefined") {
+  if (typeof window !== "undefined") {
     initializeFirebase();
   }
   return analytics;

@@ -7,10 +7,22 @@ const nextConfig = {
   images: {
     remotePatterns: [
       {
-        protocol: 'https',
-        hostname: 'tripesaglobal.s3.amazonaws.com',
-        port: '',
-        pathname: '/**',
+        protocol: "https",
+        hostname: "tripesaglobal.s3.amazonaws.com",
+        port: "",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "ik.imagekit.io",
+        port: "",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "firebasestorage.googleapis.com",
+        port: "",
+        pathname: "/**",
       },
     ],
   },

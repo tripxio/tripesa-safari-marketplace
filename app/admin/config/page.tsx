@@ -1,7 +1,7 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Settings, Palette, Image } from "lucide-react";
+import { Settings, Palette, Image, Star } from "lucide-react";
 import Link from "next/link";
 
 export default function ConfigPage() {
@@ -19,6 +19,13 @@ export default function ConfigPage() {
       icon: Image,
       href: "/admin/banner",
       color: "text-blue-600 bg-blue-100 dark:bg-blue-900/30",
+    },
+    {
+      title: "Featured Destinations",
+      description: "Manage featured destinations on the homepage",
+      icon: Star,
+      href: "/admin/destinations",
+      color: "text-yellow-600 bg-yellow-100 dark:bg-yellow-900/30",
     },
   ];
 
