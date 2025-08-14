@@ -207,20 +207,6 @@ export default function HeroSection() {
             </Badge>
           ))}
         </div>
-
-        {/* CTA Button */}
-        <div className="flex justify-center">
-          <Link href="/tours">
-            <Button
-              size="lg"
-              className="bg-orange-500 hover:bg-orange-600 text-white px-12 py-4 text-xl rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 font-semibold"
-              onClick={() => logButtonClick("Explore Tours", "hero_section")}
-            >
-              <MapPin className="h-6 w-6 mr-3" />
-              Explore Tours
-            </Button>
-          </Link>
-        </div>
       </div>
 
       {/* AI Search Modal */}
