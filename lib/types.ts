@@ -136,3 +136,27 @@ export interface InquiryResponse {
   message: string;
   data?: any;
 }
+
+// Booking types
+export interface BookingRequest {
+  agent_id?: string;
+  package_id: number;
+  date: string;
+  full_name: string;
+  email_address: string;
+  phone_number: string;
+  number_of_people: number;
+  with_token?: boolean;
+}
+
+export interface BookingResponse {
+  id: number;
+  agent_token?: string;
+  booking_reference?: string;
+  status: string;
+  total_amount?: number;
+  currency?: string;
+  message: string;
+  success: boolean;
+  data?: any;
+}
