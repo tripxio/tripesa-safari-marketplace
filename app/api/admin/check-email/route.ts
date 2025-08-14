@@ -1,64 +1,57 @@
 import { NextRequest, NextResponse } from "next/server";
-import { validateEmail } from "@/lib/utils/email-validation";
+import { getFirebaseAdminAuth, getFirebaseAdminDB } from "@/lib/firebase/admin";
+import {
+  getFirestore,
+  collection,
+  query,
+  where,
+  getDocs,
+} from "firebase/firestore";
+import { getFirebaseAuth, getFirebaseDB } from "@/lib/firebase/init";
 
 export async function POST(request: NextRequest) {
+  const { email } = await request.json();
+
+  if (!email) {
+    return NextResponse.json({ exists: false, error: "Email is required" });
+  }
+
   try {
-    const { email } = await request.json();
+    const adminDb = getFirebaseAdminDB();
+    const adminQuery = adminDb
+      .collection("admin-users")
+      .where("email", "==", email.toLowerCase());
+    const adminSnapshot = await adminQuery.get();
 
-    if (!email) {
-      return NextResponse.json({ error: "Email is required" }, { status: 400 });
+    if (!adminSnapshot.empty) {
+      return NextResponse.json({ exists: true });
     }
 
-    // Validate email format
-    if (!validateEmail(email)) {
-      return NextResponse.json(
-        { error: "Invalid email format" },
-        { status: 400 }
-      );
-    }
-
-    // Use Firebase Admin SDK for server-side operations
-    try {
-      const { getFirebaseAdminDB } = await import("@/lib/firebase/admin");
-      const db = getFirebaseAdminDB();
-
-      const emailSnapshot = await db
-        .collection("admin-users")
-        .where("email", "==", email.toLowerCase())
-        .get();
-
-      const exists = !emailSnapshot.empty;
-
-      return NextResponse.json({ exists }, { status: 200 });
-    } catch (error) {
-      console.error("Firebase Admin SDK error:", error);
-
-      // Fallback to client SDK
-      try {
-        const { getFirebaseDB } = await import("@/lib/firebase/init");
-        const db = getFirebaseDB();
-
-        const emailSnapshot = await db
-          .collection("admin-users")
-          .where("email", "==", email.toLowerCase())
-          .get();
-
-        const exists = !emailSnapshot.empty;
-
-        return NextResponse.json({ exists }, { status: 200 });
-      } catch (fallbackError) {
-        console.error("Client SDK fallback error:", fallbackError);
-        return NextResponse.json(
-          { error: "Failed to check email availability" },
-          { status: 500 }
-        );
-      }
-    }
-  } catch (error: any) {
-    console.error("Error checking email:", error);
-    return NextResponse.json(
-      { error: "Failed to check email availability" },
-      { status: 500 }
+    return NextResponse.json({ exists: false });
+  } catch (adminError) {
+    console.warn(
+      "Admin SDK check failed, falling back to client SDK:",
+      adminError
     );
+    try {
+      const db = getFirebaseDB();
+      const usersCollection = collection(db, "admin-users");
+      const q = query(
+        usersCollection,
+        where("email", "==", email.toLowerCase())
+      );
+      const emailSnapshot = await getDocs(q);
+
+      if (!emailSnapshot.empty) {
+        return NextResponse.json({ exists: true });
+      }
+      return NextResponse.json({ exists: false });
+    } catch (clientError) {
+      console.error("Client SDK check also failed:", clientError);
+      return NextResponse.json({
+        exists: false,
+        error: "Failed to check email existence",
+      });
+    }
   }
 }
