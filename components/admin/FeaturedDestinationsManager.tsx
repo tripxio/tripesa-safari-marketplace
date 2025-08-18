@@ -4,7 +4,6 @@ import { useState, useEffect, useRef } from "react";
 import {
   getFeaturedDestinations,
   saveFeaturedDestinations,
-  uploadFeaturedDestinationImage,
   deleteFeaturedDestinationImage,
   FeaturedDestination,
 } from "@/lib/firebase/config-service";
@@ -14,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Upload, Trash2, Link as LinkIcon } from "lucide-react";
+import { Upload, Trash2, Link as LinkIcon, Download } from "lucide-react";
 
 const MAX_DESTINATIONS = 3;
 
@@ -76,17 +75,30 @@ export default function FeaturedDestinationsManager() {
     }
 
     const originalDestination = destinations[index];
-    // Optimistically update the UI
     const tempUrl = URL.createObjectURL(file);
     handleInputChange(index, "imageUrl", tempUrl);
 
     try {
-      // Delete the old image if it exists and was uploaded
+      const formData = new FormData();
+      formData.append("file", file);
+
       if (originalDestination.isUploaded && originalDestination.storagePath) {
-        await deleteFeaturedDestinationImage(originalDestination.storagePath);
+        formData.append("oldStoragePath", originalDestination.storagePath);
       }
 
-      const { url, storagePath } = await uploadFeaturedDestinationImage(file);
+      const response = await fetch("/api/admin/upload-image", {
+        method: "POST",
+        body: formData,
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || "Image upload failed.");
+      }
+
+      const { url, storagePath } = result;
+
       const newDestinations = [...destinations];
       newDestinations[index] = {
         ...newDestinations[index],
@@ -96,9 +108,8 @@ export default function FeaturedDestinationsManager() {
       };
       setDestinations(newDestinations);
       toast.success("Image uploaded successfully!");
-    } catch (error) {
-      toast.error("Image upload failed.");
-      // Revert on failure
+    } catch (error: any) {
+      toast.error(error.message || "Image upload failed.");
       setDestinations((prev) => {
         const reverted = [...prev];
         reverted[index] = originalDestination;
@@ -109,6 +120,48 @@ export default function FeaturedDestinationsManager() {
       if (tempUrl) {
         URL.revokeObjectURL(tempUrl);
       }
+    }
+  };
+
+  const handleImportFromUrl = async (index: number) => {
+    const originalDestination = destinations[index];
+    const imageUrl = originalDestination.imageUrl;
+
+    if (!imageUrl || !imageUrl.startsWith("http")) {
+      toast.error("Please enter a valid image URL to import.");
+      return;
+    }
+
+    try {
+      // Delete the old image if it exists and was uploaded
+      if (originalDestination.isUploaded && originalDestination.storagePath) {
+        await deleteFeaturedDestinationImage(originalDestination.storagePath);
+      }
+
+      const response = await fetch("/api/admin/process-image-url", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ imageUrl }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to process image from URL.");
+      }
+
+      const { url, storagePath } = await response.json();
+
+      const newDestinations = [...destinations];
+      newDestinations[index] = {
+        ...newDestinations[index],
+        imageUrl: url,
+        isUploaded: true,
+        storagePath: storagePath,
+      };
+      setDestinations(newDestinations);
+      toast.success("Image imported successfully!");
+    } catch (error) {
+      toast.error("Failed to import image from URL.");
+      console.error(error);
     }
   };
 
@@ -175,6 +228,15 @@ export default function FeaturedDestinationsManager() {
                     }
                     className="flex-grow"
                   />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    onClick={() => handleImportFromUrl(index)}
+                    title="Import from URL"
+                  >
+                    <Download className="h-5 w-5" />
+                  </Button>
                   <label
                     htmlFor={`image-upload-${index}`}
                     className="cursor-pointer p-2 border rounded-md hover:bg-gray-100 flex items-center justify-center"
