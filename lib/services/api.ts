@@ -215,6 +215,12 @@ export const submitInquiry = async (
     subject: `New Inquiry from ${whitelabelName} Marketplace`,
   };
 
+  console.log(
+    "Submitting inquiry to:",
+    `${baseUrl}/agency/${agencySlug}/inquiry`
+  );
+  console.log("Inquiry payload:", inquiryPayload);
+
   const response = await fetch(`${baseUrl}/agency/${agencySlug}/inquiry`, {
     method: "POST",
     headers: {
@@ -222,6 +228,12 @@ export const submitInquiry = async (
     },
     body: JSON.stringify(inquiryPayload),
   });
+
+  console.log("Inquiry response status:", response.status);
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error("Inquiry error response:", errorText);
+  }
 
   if (!response.ok) {
     throw new Error(`HTTP error! status: ${response.status}`);
