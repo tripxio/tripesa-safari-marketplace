@@ -244,7 +244,7 @@ export default function ToursListClient({
         const responses = await Promise.all(pagePromises);
 
         // Combine all tour data
-        responses.forEach((response) => {
+        responses.forEach((response: any) => {
           if (response.data) {
             allFetchedTours.push(...response.data);
           }

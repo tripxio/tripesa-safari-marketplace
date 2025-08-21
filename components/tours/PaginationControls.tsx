@@ -1,7 +1,9 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
 
 interface PaginationControlsProps {
   lastPage: number;
@@ -14,11 +16,25 @@ export default function PaginationControls({
 }: PaginationControlsProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const [loadingPage, setLoadingPage] = useState<number | null>(null);
+
+  // Clear loading state when currentPage changes (navigation completed)
+  useEffect(() => {
+    setLoadingPage(null);
+  }, [currentPage]);
 
   const handlePageChange = (newPage: number) => {
+    // Set loading state for the specific page
+    setLoadingPage(newPage);
+
     const params = new URLSearchParams(searchParams.toString());
     params.set("page", newPage.toString());
     router.push(`?${params.toString()}`);
+
+    // Fallback: Clear loading state after 2 seconds if something goes wrong
+    setTimeout(() => {
+      setLoadingPage(null);
+    }, 2000);
   };
 
   // Generate page numbers to show
@@ -63,11 +79,19 @@ export default function PaginationControls({
     <div className="flex justify-center items-center mt-8 space-x-2">
       <Button
         onClick={() => handlePageChange(currentPage - 1)}
-        disabled={currentPage <= 1}
+        disabled={currentPage <= 1 || loadingPage !== null}
         variant="outline"
         size="sm"
+        className="min-w-[80px]"
       >
-        Previous
+        {loadingPage === currentPage - 1 ? (
+          <>
+            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            Loading
+          </>
+        ) : (
+          "Previous"
+        )}
       </Button>
 
       <div className="flex items-center space-x-1">
@@ -81,8 +105,13 @@ export default function PaginationControls({
                 variant={currentPage === page ? "default" : "outline"}
                 size="sm"
                 className="w-10 h-10"
+                disabled={loadingPage !== null}
               >
-                {page}
+                {loadingPage === page ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  page
+                )}
               </Button>
             )}
           </div>
@@ -91,11 +120,19 @@ export default function PaginationControls({
 
       <Button
         onClick={() => handlePageChange(currentPage + 1)}
-        disabled={currentPage >= lastPage}
+        disabled={currentPage >= lastPage || loadingPage !== null}
         variant="outline"
         size="sm"
+        className="min-w-[80px]"
       >
-        Next
+        {loadingPage === currentPage + 1 ? (
+          <>
+            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            Loading
+          </>
+        ) : (
+          "Next"
+        )}
       </Button>
     </div>
   );

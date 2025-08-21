@@ -8,6 +8,8 @@ import AnimationController from "@/components/common/AnimationController";
 import AnalyticsProvider from "@/components/common/AnalyticsProvider";
 import AuthProvider from "@/components/common/AuthProvider";
 import ServiceWorkerProvider from "@/components/common/ServiceWorkerProvider";
+import CacheOptimizer from "@/components/common/CacheOptimizer";
+import PerformanceMonitor from "@/components/common/PerformanceMonitor";
 import { Toaster } from "sonner";
 
 const openSans = Open_Sans({ subsets: ["latin"] });
@@ -111,6 +113,8 @@ export default function RootLayout({
               <ServiceWorkerProvider>
                 <LayoutWrapper>{children}</LayoutWrapper>
                 <AnimationController />
+                <CacheOptimizer aggressive={false} />
+                <PerformanceMonitor />
                 <Toaster
                   position="top-right"
                   toastOptions={{

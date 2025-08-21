@@ -192,10 +192,8 @@ export default function TourDetailClient({ tour }: TourDetailClientProps) {
   //   // Add wishlist logic here
   // };
 
-  // Generate agency slug from agency_id (temporary solution)
-  const agencySlug = tour.agency_id
-    ? `agency-${tour.agency_id}`
-    : "default-agency";
+  // Use actual agency slug from fetched agency data, fallback to default
+  const agencySlug = agency?.slug || "uniquelyours";
 
   return (
     <div className="min-h-screen bg-background">

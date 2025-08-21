@@ -1,8 +1,14 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { addCacheHeaders, shouldCache } from "@/lib/middleware/cache-headers";
 
 export function middleware(request: NextRequest) {
-  const response = NextResponse.next();
+  let response = NextResponse.next();
+
+  // Add performance cache headers if caching is appropriate
+  if (shouldCache(request)) {
+    response = addCacheHeaders(request, response);
+  }
 
   // Add security headers to all responses
   response.headers.set("X-Frame-Options", "DENY");
