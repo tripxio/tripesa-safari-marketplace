@@ -42,13 +42,14 @@ export default function FastTourLoader({
           if (!isCancelled) setLoadingStage("Processing data...");
         }, 1500);
 
-        // Use smart parallel fetching
-        const result = await smartFetchTours(initialFilters, initialPage, {
-          location: undefined, // Could be passed from user context
-        });
+        try {
+          // Use smart parallel fetching
+          const result = await smartFetchTours(initialFilters, initialPage, {
+            location: undefined, // Could be passed from user context
+          });
 
-        clearTimeout(progressTimer);
-        clearTimeout(progressTimer2);
+          clearTimeout(progressTimer);
+          clearTimeout(progressTimer2);
 
         if (!isCancelled) {
           setTours(result.tours.data || []);
@@ -70,11 +71,13 @@ export default function FastTourLoader({
               result.tours.meta?.last_page || 1
             );
           }
+                }
+        } catch (innerErr) {
+          clearTimeout(progressTimer);
+          clearTimeout(progressTimer2);
+          throw innerErr;
         }
       } catch (err) {
-        clearTimeout(progressTimer);
-        clearTimeout(progressTimer2);
-
         if (!isCancelled) {
           console.error("Fast tour loading failed:", err);
           setError("Failed to load tours. Please try again.");

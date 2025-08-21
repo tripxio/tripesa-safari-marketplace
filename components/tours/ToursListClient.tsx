@@ -6,7 +6,6 @@ import TourGrid from "./TourGrid";
 import PaginationControls from "./PaginationControls";
 import { useToursContext } from "@/app/tours/ToursPageClient";
 import { filterTours, sortTours } from "@/lib/utils/filterTours";
-import { useTours, usePrefetchTours } from "@/hooks/useTours";
 import { getTours } from "@/lib/services/api";
 import type { TourPackage, FilterState } from "@/lib/types";
 import { Loader2 } from "lucide-react";
