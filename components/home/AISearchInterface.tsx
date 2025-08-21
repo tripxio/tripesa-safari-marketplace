@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import ReactMarkdown from "react-markdown";
-import { X, Sparkles, Send, Loader2 } from "lucide-react";
+import { X, Sparkles, Send, Loader2, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -24,6 +24,24 @@ const generateUniqueId = () => {
   return Date.now().toString() + Math.random().toString(36).substring(2, 9);
 };
 
+// Generate sessionId once for the browser (like a user-agent)
+const getOrCreateSessionId = () => {
+  const STORAGE_KEY = "tripesa_ai_session_id";
+  let sessionId = localStorage.getItem(STORAGE_KEY);
+
+  if (!sessionId) {
+    sessionId = generateUniqueId();
+    localStorage.setItem(STORAGE_KEY, sessionId);
+  }
+
+  return sessionId;
+};
+
+// Generate conversationId for each new chat/conversation
+const generateConversationId = () => {
+  return generateUniqueId();
+};
+
 export default function AISearchInterface({
   query,
   onClose,
@@ -36,10 +54,18 @@ export default function AISearchInterface({
   const processedQueries = useRef<Set<string>>(new Set());
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  // Function to start a new conversation
+  const startNewConversation = () => {
+    setMessages([]);
+    setConversationId(generateConversationId());
+    processedQueries.current.clear();
+    setCurrentQuery("");
+  };
+
   useEffect(() => {
-    // Generate session and conversation IDs when the component mounts
-    setSessionId(generateUniqueId());
-    setConversationId(generateUniqueId());
+    // Generate session ID once for the browser and conversation ID for each new chat
+    setSessionId(getOrCreateSessionId());
+    setConversationId(generateConversationId());
   }, []);
 
   useEffect(() => {
@@ -67,10 +93,21 @@ export default function AISearchInterface({
     setMessages((prev) => [...prev, userMessage]);
     setIsLoading(true);
 
+    // Create AI message placeholder for streaming
+    const aiMessageId = generateUniqueId();
+    const aiMessage: Message = {
+      id: aiMessageId,
+      type: "ai",
+      content: "",
+      timestamp: new Date(),
+    };
+    setMessages((prev) => [...prev, aiMessage]);
+
     console.log("Sending chat request with:", {
       chatInput: searchQuery,
       sessionId,
       conversationId,
+      agencySlug: "uniquelyours", // Default agency slug as shown in the example
     });
 
     try {
@@ -85,6 +122,7 @@ export default function AISearchInterface({
             chatInput: searchQuery,
             sessionId,
             conversationId,
+            agencySlug: "uniquelyours", // Default agency slug as shown in the example
           }),
         }
       );
@@ -98,41 +136,57 @@ export default function AISearchInterface({
         );
       }
 
-      const responseText = await response.text();
-      console.log("Raw response text:", responseText);
+      // Handle streaming response
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+      let accumulatedContent = "";
 
-      try {
-        const data = JSON.parse(responseText);
-        console.log("Parsed JSON data:", data);
+      if (reader) {
+        while (true) {
+          const { done, value } = await reader.read();
 
-        const aiResponse: Message = {
-          id: generateUniqueId(),
-          type: "ai",
-          content: data.output || "Sorry, I couldn't get a response.",
-          timestamp: new Date(),
-        };
-        setMessages((prev) => [...prev, aiResponse]);
-      } catch (jsonError) {
-        console.error("Failed to parse JSON:", jsonError);
-        // If JSON parsing fails, maybe the raw text is the message.
-        const aiResponse: Message = {
-          id: generateUniqueId(),
-          type: "ai",
-          content:
-            responseText || "Received an invalid response from the server.",
-          timestamp: new Date(),
-        };
-        setMessages((prev) => [...prev, aiResponse]);
+          if (done) break;
+
+          const chunk = decoder.decode(value, { stream: true });
+          accumulatedContent += chunk;
+
+          // Update the AI message with accumulated content
+          setMessages((prev) =>
+            prev.map((msg) =>
+              msg.id === aiMessageId
+                ? { ...msg, content: accumulatedContent }
+                : msg
+            )
+          );
+        }
+      }
+
+      console.log("Final response content:", accumulatedContent);
+
+      // If no content was received, show fallback message
+      if (!accumulatedContent.trim()) {
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg.id === aiMessageId
+              ? { ...msg, content: "Sorry, I couldn't get a response." }
+              : msg
+          )
+        );
       }
     } catch (error) {
       console.error("Error fetching AI response:", error);
-      const errorMessage: Message = {
-        id: generateUniqueId(),
-        type: "ai",
-        content: "Sorry, something went wrong. Please try again later.",
-        timestamp: new Date(),
-      };
-      setMessages((prev) => [...prev, errorMessage]);
+
+      // Update the AI message with error content
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.id === aiMessageId
+            ? {
+                ...msg,
+                content: "Sorry, something went wrong. Please try again later.",
+              }
+            : msg
+        )
+      );
     } finally {
       setIsLoading(false);
     }
@@ -151,9 +205,21 @@ export default function AISearchInterface({
             <Sparkles className="h-5 w-5 text-orange-500" />
             <h3 className="text-lg font-semibold">AI Safari Assistant</h3>
           </div>
-          <Button variant="ghost" size="icon" onClick={onClose}>
-            <X className="h-4 w-4" />
-          </Button>
+          <div className="flex items-center space-x-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={startNewConversation}
+              className="text-orange-500 hover:text-orange-600"
+              disabled={isLoading}
+            >
+              <Plus className="h-4 w-4 mr-1" />
+              New Chat
+            </Button>
+            <Button variant="ghost" size="icon" onClick={onClose}>
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
 
         {/* Messages */}
