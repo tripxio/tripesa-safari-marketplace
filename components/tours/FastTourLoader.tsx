@@ -51,27 +51,27 @@ export default function FastTourLoader({
           clearTimeout(progressTimer);
           clearTimeout(progressTimer2);
 
-        if (!isCancelled) {
-          setTours(result.tours.data || []);
-          setIsLoading(false);
+          if (!isCancelled) {
+            setTours(result.tours.data || []);
+            setIsLoading(false);
 
-          // Log performance metrics
-          if (process.env.NODE_ENV === "development") {
-            console.log("🚀 Fast loading metrics:", {
-              totalTime: result.performance.totalTime,
-              savedTime: result.performance.savedTime,
-              toursCount: result.tours.data?.length || 0,
-            });
-          }
+            // Log performance metrics
+            if (process.env.NODE_ENV === "development") {
+              console.log("🚀 Fast loading metrics:", {
+                totalTime: result.performance.totalTime,
+                savedTime: result.performance.savedTime,
+                toursCount: result.tours.data?.length || 0,
+              });
+            }
 
-          // Notify parent component
-          if (onDataLoaded) {
-            onDataLoaded(
-              result.tours.data || [],
-              result.tours.meta?.last_page || 1
-            );
+            // Notify parent component
+            if (onDataLoaded) {
+              onDataLoaded(
+                result.tours.data || [],
+                result.tours.meta?.last_page || 1
+              );
+            }
           }
-                }
         } catch (innerErr) {
           clearTimeout(progressTimer);
           clearTimeout(progressTimer2);

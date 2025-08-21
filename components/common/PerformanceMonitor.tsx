@@ -47,11 +47,11 @@ export default function PerformanceMonitor() {
               navEntry.domContentLoadedEventStart,
             "ms"
           );
-                     console.log(
-             "Total Load Time:",
-             navEntry.loadEventEnd - navEntry.fetchStart,
-             "ms"
-           );
+          console.log(
+            "Total Load Time:",
+            navEntry.loadEventEnd - navEntry.fetchStart,
+            "ms"
+          );
           console.groupEnd();
         }
 

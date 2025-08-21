@@ -109,29 +109,29 @@ export default function RootLayout({
       <body className={openSans.className}>
         <AuthProvider>
           <ThemeProvider>
-              <AnalyticsProvider>
-                <ServiceWorkerProvider>
-                  <LayoutWrapper>{children}</LayoutWrapper>
-                  <AnimationController />
-                  <CacheOptimizer aggressive={false} />
-                  <PerformanceMonitor />
-                  <Toaster
-                    position="top-right"
-                    toastOptions={{
-                      style: {
-                        background: "var(--background)",
-                        color: "var(--foreground)",
-                        border: "1px solid var(--border)",
-                        boxShadow: "0 10px 25px rgba(0, 0, 0, 0.3)",
-                        backdropFilter: "blur(8px)",
-                      },
-                      className: "font-semibold",
-                    }}
-                    theme="system"
-                  />
-                </ServiceWorkerProvider>
-              </AnalyticsProvider>
-            </ThemeProvider>
+            <AnalyticsProvider>
+              <ServiceWorkerProvider>
+                <LayoutWrapper>{children}</LayoutWrapper>
+                <AnimationController />
+                <CacheOptimizer aggressive={false} />
+                <PerformanceMonitor />
+                <Toaster
+                  position="top-right"
+                  toastOptions={{
+                    style: {
+                      background: "var(--background)",
+                      color: "var(--foreground)",
+                      border: "1px solid var(--border)",
+                      boxShadow: "0 10px 25px rgba(0, 0, 0, 0.3)",
+                      backdropFilter: "blur(8px)",
+                    },
+                    className: "font-semibold",
+                  }}
+                  theme="system"
+                />
+              </ServiceWorkerProvider>
+            </AnalyticsProvider>
+          </ThemeProvider>
         </AuthProvider>
       </body>
     </html>
