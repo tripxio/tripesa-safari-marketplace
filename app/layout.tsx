@@ -8,6 +8,9 @@ import AnimationController from "@/components/common/AnimationController";
 import AnalyticsProvider from "@/components/common/AnalyticsProvider";
 import AuthProvider from "@/components/common/AuthProvider";
 import ServiceWorkerProvider from "@/components/common/ServiceWorkerProvider";
+import SWRProvider from "@/components/common/SWRProvider";
+import CacheOptimizer from "@/components/common/CacheOptimizer";
+import PerformanceMonitor from "@/components/common/PerformanceMonitor";
 import { Toaster } from "sonner";
 
 const openSans = Open_Sans({ subsets: ["latin"] });
@@ -106,28 +109,32 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={openSans.className}>
         <AuthProvider>
-          <ThemeProvider>
-            <AnalyticsProvider>
-              <ServiceWorkerProvider>
-                <LayoutWrapper>{children}</LayoutWrapper>
-                <AnimationController />
-                <Toaster
-                  position="top-right"
-                  toastOptions={{
-                    style: {
-                      background: "var(--background)",
-                      color: "var(--foreground)",
-                      border: "1px solid var(--border)",
-                      boxShadow: "0 10px 25px rgba(0, 0, 0, 0.3)",
-                      backdropFilter: "blur(8px)",
-                    },
-                    className: "font-semibold",
-                  }}
-                  theme="system"
-                />
-              </ServiceWorkerProvider>
-            </AnalyticsProvider>
-          </ThemeProvider>
+          <SWRProvider>
+            <ThemeProvider>
+              <AnalyticsProvider>
+                <ServiceWorkerProvider>
+                  <LayoutWrapper>{children}</LayoutWrapper>
+                  <AnimationController />
+                  <CacheOptimizer aggressive={false} />
+                  <PerformanceMonitor />
+                  <Toaster
+                    position="top-right"
+                    toastOptions={{
+                      style: {
+                        background: "var(--background)",
+                        color: "var(--foreground)",
+                        border: "1px solid var(--border)",
+                        boxShadow: "0 10px 25px rgba(0, 0, 0, 0.3)",
+                        backdropFilter: "blur(8px)",
+                      },
+                      className: "font-semibold",
+                    }}
+                    theme="system"
+                  />
+                </ServiceWorkerProvider>
+              </AnalyticsProvider>
+            </ThemeProvider>
+          </SWRProvider>
         </AuthProvider>
       </body>
     </html>

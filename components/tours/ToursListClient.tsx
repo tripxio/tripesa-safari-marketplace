@@ -6,6 +6,7 @@ import TourGrid from "./TourGrid";
 import PaginationControls from "./PaginationControls";
 import { useToursContext } from "@/app/tours/ToursPageClient";
 import { filterTours, sortTours } from "@/lib/utils/filterTours";
+import { useTours, usePrefetchTours } from "@/hooks/useTours";
 import { getTours } from "@/lib/services/api";
 import type { TourPackage, FilterState } from "@/lib/types";
 import { Loader2 } from "lucide-react";
@@ -244,7 +245,7 @@ export default function ToursListClient({
         const responses = await Promise.all(pagePromises);
 
         // Combine all tour data
-        responses.forEach((response) => {
+        responses.forEach((response: any) => {
           if (response.data) {
             allFetchedTours.push(...response.data);
           }
