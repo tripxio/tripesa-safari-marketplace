@@ -7,6 +7,7 @@ import type {
   BookingRequest,
   BookingResponse,
 } from "@/lib/types";
+import CryptoJS from "crypto-js";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
@@ -278,6 +279,150 @@ export const submitBooking = async (
     const errorData = await response.json().catch(() => null);
     throw new Error(
       errorData?.message || `HTTP error! status: ${response.status}`
+    );
+  }
+
+  return response.json();
+};
+
+// Payment encryption using CryptoJS AES with the system's encryption UUID
+const PAYMENT_ENCRYPTION_KEY = "c31433cc-1295-44aa-aa7a-f2a0e647a78c";
+
+const encryptPaymentData = (data: any): string => {
+  try {
+    const jsonString = JSON.stringify(data);
+    const encrypted = CryptoJS.AES.encrypt(
+      jsonString,
+      PAYMENT_ENCRYPTION_KEY
+    ).toString();
+    return encrypted;
+  } catch (error) {
+    console.error("Error encrypting payment data:", error);
+    throw new Error("Failed to encrypt payment data");
+  }
+};
+
+export const createPaymentPayload = (
+  amount: number,
+  currency: string,
+  phoneNumber: string,
+  email: string,
+  name: string,
+  bookingId: number,
+  packageId: number,
+  description?: string,
+  agencyId?: number
+): string => {
+  const paymentData = {
+    amount,
+    currency,
+    phone_number: phoneNumber,
+    email,
+    name,
+    description: description || "Package booking payment",
+    meta: {
+      booking_id: bookingId,
+      package_id: packageId,
+      agency_id: agencyId,
+    },
+  };
+
+  return encryptPaymentData(paymentData);
+};
+
+// Payment Fees API
+export const getPaymentFees = async (
+  agentToken: string,
+  action: string = "booking",
+  currency: string,
+  amount: number,
+  category: string = "collections"
+): Promise<any> => {
+  const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(
+    "/api/search",
+    "/api"
+  );
+
+  const url = new URL(`${baseUrl}/payments/fees`);
+  url.searchParams.append("action", action);
+  url.searchParams.append("currency", currency);
+  url.searchParams.append("amount", amount.toString());
+  url.searchParams.append("category", category);
+
+  const response = await fetch(url.toString(), {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${agentToken}`,
+    },
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => null);
+    throw new Error(
+      errorData?.message ||
+        `Failed to fetch payment fees! status: ${response.status}`
+    );
+  }
+
+  return response.json();
+};
+
+// Payment APIs
+export const submitMobileMoneyPayment = async (
+  agentToken: string,
+  encryptedPayment: string
+): Promise<any> => {
+  const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(
+    "/api/search",
+    "/api"
+  );
+
+  const response = await fetch(`${baseUrl}/payments/mobile-money`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${agentToken}`,
+    },
+    body: JSON.stringify({
+      payment: encryptedPayment,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => null);
+    throw new Error(
+      errorData?.message || `Payment failed! status: ${response.status}`
+    );
+  }
+
+  return response.json();
+};
+
+export const submitCardPayment = async (
+  agentToken: string,
+  encryptedPayment: string
+): Promise<any> => {
+  const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(
+    "/api/search",
+    "/api"
+  );
+
+  const response = await fetch(`${baseUrl}/payments/card`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${agentToken}`,
+    },
+    body: JSON.stringify({
+      payment: encryptedPayment,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => null);
+    throw new Error(
+      errorData?.message || `Payment failed! status: ${response.status}`
     );
   }
 
