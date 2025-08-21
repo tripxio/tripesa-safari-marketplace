@@ -86,7 +86,12 @@ export default function FeaturedDestinations() {
                 key={destination.id}
                 className="flex flex-col overflow-hidden rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 ease-in-out transform hover:-translate-y-1 group"
               >
-                <Link href={destination.link || "#"} className="block">
+                <Link
+                  href={destination.link || "#"}
+                  className="block"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
                   <div className="relative h-64 w-full">
                     <Image
                       src={destination.imageUrl || "/placeholder.jpg"}
