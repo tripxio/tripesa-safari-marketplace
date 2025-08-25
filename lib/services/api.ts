@@ -289,7 +289,7 @@ export const submitBooking = async (
     source: `${whitelabelName} Marketplace`,
   };
 
-  const url = new URL(`${baseUrl}/customer/guest/book/${packageId}`);
+  const url = new URL(`${baseUrl}/agency/customer/guest/book/${packageId}`);
   if (bookingPayload.with_token) {
     url.searchParams.append("with_token", "true");
   }
