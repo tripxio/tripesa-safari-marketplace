@@ -45,7 +45,7 @@ export default function SimpleAnalyticsDashboard() {
   const [error, setError] = useState<string | null>(null);
   const [dateRange, setDateRange] = useState("7daysAgo");
   const [lastUpdateTime, setLastUpdateTime] = useState<Date | null>(null);
-  const [firebaseProjectId, setFirebaseProjectId = useState<string |null>('tripesa-marketplace-production');
+  const [firebaseProjectId, setFirebaseProjectId] = useState<string |null>('tripesa-marketplace-production');
 
   // Function to fetch real analytics data from Google Analytics Data API
   const fetchGoogleAnalytics = async (): Promise<GoogleAnalyticsData> => {
