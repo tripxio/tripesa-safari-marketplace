@@ -277,7 +277,16 @@ export default function ThemeColorManager() {
             <div className="mt-2 flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400">
               <span>Version {config.version}</span>
               <span>•</span>
-              <span>Last updated: {config.updatedAt.toLocaleDateString()}</span>
+              {config.updatedAt && (
+      <span>
+        Last updated:{" "}
+        {(
+          config.updatedAt instanceof Date
+            ? config.updatedAt
+            : new Date(config.updatedAt)
+        ).toLocaleDateString()}
+      </span>
+    )}
             </div>
           )}
         </div>
