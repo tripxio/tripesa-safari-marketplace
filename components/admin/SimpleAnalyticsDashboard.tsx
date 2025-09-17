@@ -45,6 +45,7 @@ export default function SimpleAnalyticsDashboard() {
   const [error, setError] = useState<string | null>(null);
   const [dateRange, setDateRange] = useState("7daysAgo");
   const [lastUpdateTime, setLastUpdateTime] = useState<Date | null>(null);
+  const [firebaseProjectId, setFirebaseProjectId = useState<string |null>('tripesa-marketplace-production');
 
   // Function to fetch real analytics data from Google Analytics Data API
   const fetchGoogleAnalytics = async (): Promise<GoogleAnalyticsData> => {
@@ -53,7 +54,7 @@ export default function SimpleAnalyticsDashboard() {
       if (!projectId) {
         throw new Error("Firebase project ID not configured");
       }
-
+      setFirebaseProjectId(projectId);
       const response = await fetch(
         `/api/analytics?projectId=${projectId}&startDate=${dateRange}&endDate=today`,
         {
@@ -351,7 +352,7 @@ export default function SimpleAnalyticsDashboard() {
           </Button>
           <Button asChild variant="outline">
             <a
-              href="https://console.firebase.google.com/project/tripesa-marketplace/analytics"
+              href={`https://console.firebase.google.com/project/${firebaseProjectId}/analytics`}
               target="_blank"
               rel="noopener noreferrer"
             >
